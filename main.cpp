@@ -130,6 +130,32 @@ void read_from_console(boost::asio::posix::stream_descriptor& in,
   });
 }
 
+std::vector<libp2p::peer::PeerInfo> bootstrap_nodes_fn()
+{
+      std::vector<std::string> addresses = config::addresses;
+
+      std::unordered_map<libp2p::peer::PeerId,
+                         std::vector<libp2p::multi::Multiaddress>>
+          addresses_by_peer_id;
+
+      for (auto &address : addresses) {
+        auto ma = libp2p::multi::Multiaddress::create(address).value();
+        auto peer_id_base58 = ma.getPeerId().value();
+        auto peer_id = libp2p::peer::PeerId::fromBase58(peer_id_base58).value();
+
+        addresses_by_peer_id[std::move(peer_id)].emplace_back(std::move(ma));
+      }
+
+      std::vector<libp2p::peer::PeerInfo> v;
+      v.reserve(addresses_by_peer_id.size());
+      for (auto &i : addresses_by_peer_id) {
+        v.emplace_back(libp2p::peer::PeerInfo{
+            .id = i.first, .addresses = {std::move(i.second)}});
+      }
+
+      return v;
+}
+
 int main(int argc, char *argv[]) {
   // prepare log system
   auto logging_system = init_logging();
@@ -163,46 +189,7 @@ int main(int argc, char *argv[]) {
       exit(EXIT_FAILURE);
     }
 
-    auto bootstrap_nodes = [] {
-      std::vector<std::string> addresses = {
-          // clang-format off
-          "/dnsaddr/bootstrap.libp2p.io/ipfs/QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN",
-          "/dnsaddr/bootstrap.libp2p.io/ipfs/QmQCU2EcMqAqQPR2i9bChDtGNJchTbq5TbXJJ16u19uLTa",
-          "/dnsaddr/bootstrap.libp2p.io/ipfs/QmbLHAnMoJPWSCR5Zhtx6BHJX9KiKNN6tpvbUcqanj75Nb",
-          "/dnsaddr/bootstrap.libp2p.io/ipfs/QmcZf59bWwK5XFi76CZX8cbJ4BhTzzA3gU1ZjYZcYW3dwt",
-          "/ip4/104.131.131.82/tcp/4001/ipfs/QmaCpDMGvV2BGHeYERUEnRQAwe3N8SzbUtfsmvsqQLuvuJ",            // mars.i.ipfs.io
-          "/ip4/104.236.179.241/tcp/4001/ipfs/QmSoLPppuBtQSGwKDZT2M73ULpjvfd3aZ6ha4oFGL1KrGM",           // pluto.i.ipfs.io
-          "/ip4/128.199.219.111/tcp/4001/ipfs/QmSoLSafTMBsPKadTEgaXctDQVcqN88CNLHXMkTNwMKPnu",           // saturn.i.ipfs.io
-          "/ip4/104.236.76.40/tcp/4001/ipfs/QmSoLV4Bbm51jM9C4gDYZQ9Cy3U6aXMJDAbzgu2fzaDs64",             // venus.i.ipfs.io
-          "/ip4/178.62.158.247/tcp/4001/ipfs/QmSoLer265NRgSp2LA3dPaeykiS1J6DifTC88f5uVQKNAd",            // earth.i.ipfs.io
-          "/ip6/2604:a880:1:20::203:d001/tcp/4001/ipfs/QmSoLPppuBtQSGwKDZT2M73ULpjvfd3aZ6ha4oFGL1KrGM",  // pluto.i.ipfs.io
-          "/ip6/2400:6180:0:d0::151:6001/tcp/4001/ipfs/QmSoLSafTMBsPKadTEgaXctDQVcqN88CNLHXMkTNwMKPnu",  // saturn.i.ipfs.io
-          "/ip6/2604:a880:800:10::4a:5001/tcp/4001/ipfs/QmSoLV4Bbm51jM9C4gDYZQ9Cy3U6aXMJDAbzgu2fzaDs64", // venus.i.ipfs.io
-          "/ip6/2a03:b0c0:0:1010::23:1001/tcp/4001/ipfs/QmSoLer265NRgSp2LA3dPaeykiS1J6DifTC88f5uVQKNAd", // earth.i.ipfs.io
-          // clang-format on
-      };
-
-      std::unordered_map<libp2p::peer::PeerId,
-                         std::vector<libp2p::multi::Multiaddress>>
-          addresses_by_peer_id;
-
-      for (auto &address : addresses) {
-        auto ma = libp2p::multi::Multiaddress::create(address).value();
-        auto peer_id_base58 = ma.getPeerId().value();
-        auto peer_id = libp2p::peer::PeerId::fromBase58(peer_id_base58).value();
-
-        addresses_by_peer_id[std::move(peer_id)].emplace_back(std::move(ma));
-      }
-
-      std::vector<libp2p::peer::PeerInfo> v;
-      v.reserve(addresses_by_peer_id.size());
-      for (auto &i : addresses_by_peer_id) {
-        v.emplace_back(libp2p::peer::PeerInfo{
-            .id = i.first, .addresses = {std::move(i.second)}});
-      }
-
-      return v;
-    }();
+    auto bootstrap_nodes = bootstrap_nodes_fn();
 
     auto ma = libp2p::multi::Multiaddress::create(argv[1]).value();  // NOLINT
 
