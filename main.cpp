@@ -22,20 +22,40 @@
 #include <libp2p/log/sublogger.hpp>
 #include <libp2p/multi/content_identifier_codec.hpp>
 
+//===================== GLOBALS ======================================
 // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
 boost::optional<libp2p::peer::PeerId> self_id;
 
 // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
 std::set<std::shared_ptr<Session>, Cmp> sessions;
 
-int main(int argc, char *argv[]) {
-  // prepare log system
-  auto logging_system = std::make_shared<soralog::LoggingSystem>(
+libp2p::protocol::kademlia::Config kademlia_config;
+
+std::shared_ptr<libp2p::protocol::kademlia::Kademlia> kademlia;
+// Key for group of chat
+libp2p::protocol::kademlia::ContentId content_id("meet me here");
+
+auto injector = libp2p::injector::makeHostInjector(
+      // libp2p::injector::useKeyPair(kp), // Use predefined keypair
+      libp2p::injector::makeKademliaInjector(
+          libp2p::injector::useKademliaConfig(kademlia_config)));
+auto &scheduler = injector.create<libp2p::protocol::Scheduler &>();
+
+std::shared_ptr<libp2p::Host> host = nullptr;
+//====================================================================
+
+std::shared_ptr<soralog::LoggingSystem> init_logging()
+{
+  return std::make_shared<soralog::LoggingSystem>(
       std::make_shared<soralog::ConfiguratorFromYAML>(
           // Original LibP2P logging config
           std::make_shared<libp2p::log::Configurator>(),
           // Additional logging config for application
-          logger_config));
+          config::logger_config));
+}
+
+void configure_logging(std::shared_ptr<soralog::LoggingSystem>& logging_system)
+{
   auto r = logging_system->configure();
   if (not r.message.empty()) {
     (r.has_error ? std::cerr : std::cout) << r.message << std::endl;
@@ -43,6 +63,77 @@ int main(int argc, char *argv[]) {
   if (r.has_error) {
     exit(EXIT_FAILURE);
   }
+}
+
+void init_kademlia_config()
+{
+  kademlia_config.randomWalk.enabled = true;
+  kademlia_config.randomWalk.interval = std::chrono::seconds(300);
+  kademlia_config.requestConcurency = 20;
+}
+
+void find_providers()
+{
+  [[maybe_unused]] auto res1 = kademlia->findProviders(
+      content_id, 0,
+      [&](libp2p::outcome::result<std::vector<libp2p::peer::PeerInfo>>
+              res) {
+        scheduler
+            .schedule(libp2p::protocol::scheduler::toTicks(
+                          kademlia_config.randomWalk.interval),
+                      find_providers)
+            .detach();
+
+        if (not res) {
+          std::cerr << "Cannot find providers: " << res.error().message()
+                    << std::endl;
+          return;
+        }
+
+        auto &providers = res.value();
+        for (auto &provider : providers) {
+          host->newStream(provider, "/chat/1.1.0", handleOutgoingStream);
+        }
+      });
+};
+
+void provide()
+{
+  [[maybe_unused]] auto res =
+      kademlia->provide(content_id, not kademlia_config.passiveMode);
+
+  scheduler
+      .schedule(libp2p::protocol::scheduler::toTicks(
+                    kademlia_config.randomWalk.interval),
+                provide)
+      .detach();
+};
+
+// Asynchronous transmit data from standard input to peers, that's privided
+// same content id
+void read_from_console(boost::asio::posix::stream_descriptor& in,
+                        std::array<uint8_t, 1 << 12>& buffer)
+{
+  in.async_read_some(boost::asio::buffer(buffer), [&](auto ec, auto size) {
+    auto i = std::find_if(buffer.begin(), buffer.begin() + size + 1,
+                          [](auto c) { return c == '\n'; });
+
+    if (i != buffer.begin() + size + 1) {
+      auto out = std::make_shared<std::vector<uint8_t>>();
+      out->assign(buffer.begin(), buffer.begin() + size);
+
+      for (const auto &session : sessions) {
+        session->write(out, sessions);
+      }
+    }
+    read_from_console(in, buffer);
+  });
+}
+
+int main(int argc, char *argv[]) {
+  // prepare log system
+  auto logging_system = init_logging();
+  configure_logging(logging_system);
 
   libp2p::log::setLoggingSystem(logging_system);
   if (std::getenv("TRACE_DEBUG") != nullptr) {
@@ -57,24 +148,14 @@ int main(int argc, char *argv[]) {
       // clang-format off
       .publicKey = {{
         .type = libp2p::crypto::Key::Type::Ed25519,
-        .data = libp2p::common::unhex("48453469c62f4885373099421a7365520b5ffb0d93726c124166be4b81d852e6").value()
+        .data = libp2p::common::unhex(config::hex_bootstrap_pub_key).value()
       }},
       .privateKey = {{
         .type = libp2p::crypto::Key::Type::Ed25519,
-        .data = libp2p::common::unhex("4a9361c525840f7086b893d584ebbe475b4ec7069951d2e897e8bceb0a3f35ce").value()
+        .data = libp2p::common::unhex(config::hex_bootstrap_priv_key).value()
       }},
       // clang-format on
   };
-
-  libp2p::protocol::kademlia::Config kademlia_config;
-  kademlia_config.randomWalk.enabled = true;
-  kademlia_config.randomWalk.interval = std::chrono::seconds(300);
-  kademlia_config.requestConcurency = 20;
-
-  auto injector = libp2p::injector::makeHostInjector(
-      // libp2p::injector::useKeyPair(kp), // Use predefined keypair
-      libp2p::injector::makeKademliaInjector(
-          libp2p::injector::useKademliaConfig(kademlia_config)));
 
   try {
     if (argc < 2) {
@@ -127,59 +208,19 @@ int main(int argc, char *argv[]) {
 
     auto io = injector.create<std::shared_ptr<boost::asio::io_context>>();
 
-    auto host = injector.create<std::shared_ptr<libp2p::Host>>();
+    host = injector.create<std::shared_ptr<libp2p::Host>>();
 
     self_id = host->getId();
 
     std::cerr << self_id->toBase58() << " * started" << std::endl;
 
-    auto kademlia =
-        injector
-            .create<std::shared_ptr<libp2p::protocol::kademlia::Kademlia>>();
+    init_kademlia_config();
+
+    kademlia = injector.create<std::shared_ptr<libp2p::protocol::kademlia::Kademlia>>();
 
     // Handle streams for observed protocol
     host->setProtocolHandler("/chat/1.0.0", handleIncomingStream);
     host->setProtocolHandler("/chat/1.1.0", handleIncomingStream);
-
-    // Key for group of chat
-    libp2p::protocol::kademlia::ContentId content_id("meet me here");
-
-    auto &scheduler = injector.create<libp2p::protocol::Scheduler &>();
-
-    std::function<void()> find_providers = [&] {
-      [[maybe_unused]] auto res1 = kademlia->findProviders(
-          content_id, 0,
-          [&](libp2p::outcome::result<std::vector<libp2p::peer::PeerInfo>>
-                  res) {
-            scheduler
-                .schedule(libp2p::protocol::scheduler::toTicks(
-                              kademlia_config.randomWalk.interval),
-                          find_providers)
-                .detach();
-
-            if (not res) {
-              std::cerr << "Cannot find providers: " << res.error().message()
-                        << std::endl;
-              return;
-            }
-
-            auto &providers = res.value();
-            for (auto &provider : providers) {
-              host->newStream(provider, "/chat/1.1.0", handleOutgoingStream);
-            }
-          });
-    };
-
-    std::function<void()> provide = [&, content_id] {
-      [[maybe_unused]] auto res =
-          kademlia->provide(content_id, not kademlia_config.passiveMode);
-
-      scheduler
-          .schedule(libp2p::protocol::scheduler::toTicks(
-                        kademlia_config.randomWalk.interval),
-                    provide)
-          .detach();
-    };
 
     io->post([&] {
       auto listen = host->listen(ma);
@@ -214,25 +255,7 @@ int main(int argc, char *argv[]) {
     boost::asio::posix::stream_descriptor in(*io, ::dup(STDIN_FILENO));
     std::array<uint8_t, 1 << 12> buffer{};
 
-    // Asynchronous transmit data from standard input to peers, that's privided
-    // same content id
-    std::function<void()> read_from_console = [&] {
-      in.async_read_some(boost::asio::buffer(buffer), [&](auto ec, auto size) {
-        auto i = std::find_if(buffer.begin(), buffer.begin() + size + 1,
-                              [](auto c) { return c == '\n'; });
-
-        if (i != buffer.begin() + size + 1) {
-          auto out = std::make_shared<std::vector<uint8_t>>();
-          out->assign(buffer.begin(), buffer.begin() + size);
-
-          for (const auto &session : sessions) {
-            session->write(out, sessions);
-          }
-        }
-        read_from_console();
-      });
-    };
-    read_from_console();
+    read_from_console(in, buffer);
 
     boost::asio::signal_set signals(*io, SIGINT, SIGTERM);
     signals.async_wait(
@@ -243,8 +266,7 @@ int main(int argc, char *argv[]) {
     exit(EXIT_FAILURE);
   }
 
-  std::cout << "Starting " << std::endl;
-  auto tup = GenerateKey();
-  std::cout << std::get<0>(tup) << std::endl << std::get<1>(tup) << std::endl;
+  // auto tup = GenerateKey();
+  // std::cout << std::get<0>(tup) << std::endl << std::get<1>(tup) << std::endl;
   exit(EXIT_SUCCESS);
 }
