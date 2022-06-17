@@ -7,6 +7,9 @@ set(CMAKE_BUILD_TYPE Debug)
 
 add_executable(SimpleEthClient
     main.cpp
+    ClientApp.cpp
+    crypto/KeyGenerator.cpp
+    session.cpp
     )
 
 target_link_libraries(SimpleEthClient
