@@ -6,6 +6,8 @@
 #include <string>
 #include <boost/program_options.hpp>
 
+#include "crypto/RLPUtils.h"
+
 #include "ClientApp.h"
 
 int main(int argc, char *argv[])
@@ -39,6 +41,23 @@ int main(int argc, char *argv[])
     std::cout << "Client multiaddress : " << multiaddress << std :: endl;
     std::cout << "Running as a bootsrap node : " << (bootstrap ? "True" : "False") << std :: endl;
 
-    ClientApp client(multiaddress);
-    client.run();
+
+
+
+
+
+    std::vector<std::any> values_to_encode;
+    values_to_encode.emplace_back(uint8_t(25));
+    values_to_encode.emplace_back(uint16_t(65535));
+
+    std::vector<uint8_t> res = RLP::Encode(values_to_encode);
+
+    for(auto& byte : res)
+    {
+        std::cout << (unsigned char)byte << " ";
+    }
+    std::cout << std::endl;
+
+    // ClientApp client(multiaddress);
+    //client.run();
 }
