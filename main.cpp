@@ -37,7 +37,7 @@ int main(int argc, char *argv[])
     bool bootstrap(vm["bootstrap_node"].as<bool>());
 
     std::cout << "Client multiaddress : " << multiaddress << std :: endl;
-    std::cout << "Running as a boostrap node : " << (bootstrap ? "True" : "False") << std :: endl;
+    std::cout << "Running as a bootsrap node : " << (bootstrap ? "True" : "False") << std :: endl;
 
     ClientApp client(multiaddress);
     client.run();
