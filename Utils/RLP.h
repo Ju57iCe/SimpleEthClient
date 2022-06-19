@@ -2,7 +2,10 @@
 
 #include <cstdint>
 #include <vector>
+#include <string>
 #include <any>
+#include <iomanip>
+#include <sstream>
 
 #include <type_traits>
 
@@ -21,10 +24,11 @@ std::vector<uint8_t> splitValueToBytes(T const& value)
     return bytes;
 }
 
-namespace RLP
+namespace Utils::RLP
 {
 std::vector<uint8_t> Encode(std::vector<std::any> values)
 {
+    // ToDo - handle 0x7f, 0x80, 0xbf, 0xc0 variants
     std::vector<uint8_t> result;
     for(uint32_t i = 0; i < values.size(); ++i)
     {
@@ -36,7 +40,7 @@ std::vector<uint8_t> Encode(std::vector<std::any> values)
                     values[i].type() == typeid(uint16_t) ||
                     values[i].type() == typeid(uint32_t) ||
                     values[i].type() == typeid(uint64_t)
-                    // values[i].type() == typeid(double) ||  // Research
+                    // values[i].type() == typeid(double) ||  // ToDo Research
                     // values[i].type() == typeid(float) ||
                     )
                 {
@@ -63,7 +67,11 @@ std::vector<uint8_t> Encode(std::vector<std::any> values)
                 }
                 else if (values[i].type() == typeid(std::string))
                 {
-                    std::cout << "string: " << std::any_cast<std::string>(values[i]) << "\n";
+                    //std::cout << "string: " << std::any_cast<std::string>(values[i]) << "\n";
+                }
+                else if (values[i].type() == typeid(std::vector))
+                {
+                    //std::cout << "vector: " << std::any_cast<std::vector>(values[i]) << "\n";
                 }
             }
             catch(const std::bad_any_cast& e) 

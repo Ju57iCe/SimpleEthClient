@@ -6,7 +6,8 @@
 #include <string>
 #include <boost/program_options.hpp>
 
-#include "crypto/RLPUtils.h"
+#include "Utils/RLP.h"
+#include "Utils/Hex.h"
 
 #include "ClientApp.h"
 
@@ -42,21 +43,15 @@ int main(int argc, char *argv[])
     std::cout << "Running as a bootsrap node : " << (bootstrap ? "True" : "False") << std :: endl;
 
 
-
-
-
-
     std::vector<std::any> values_to_encode;
     values_to_encode.emplace_back(uint8_t(25));
     values_to_encode.emplace_back(uint16_t(65535));
 
-    std::vector<uint8_t> res = RLP::Encode(values_to_encode);
+    std::vector<uint8_t> res = Utils::RLP::Encode(values_to_encode);
 
-    for(auto& byte : res)
-    {
-        std::cout << (unsigned char)byte << " ";
-    }
-    std::cout << std::endl;
+
+    std::cout << (unsigned)res[0] << " in hex " << Utils::Hex::ToHex(res[0]) << std::endl
+        << (unsigned)res[1] << " in hex " << Utils::Hex::ToHex(res[1]) << std::endl;
 
     // ClientApp client(multiaddress);
     //client.run();
