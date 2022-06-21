@@ -6,6 +6,7 @@
 #include <any>
 #include <iomanip>
 #include <sstream>
+#include <limits>
 
 #include <type_traits>
 
@@ -91,6 +92,55 @@ std::vector<uint8_t> Encode(std::vector<std::any> values)
                     return std::vector<uint8_t>();
                 }
             }
+        }
+    }
+
+    return result;
+}
+
+std::vector<uint8_t> Encode(std::string str)
+{
+    std::vector<uint8_t> result;
+
+    if (str.size() == 0)
+    {
+        uint8_t prefix = 128 + str.size(); // 128 dec == 0x80 hex
+        result.emplace_back(prefix);
+        result.emplace_back(0);
+    }
+    else if (str.size() <= 55)
+    {
+        uint8_t prefix = 128 + str.size(); // 128 dec == 0x80 hex
+        result.emplace_back(prefix);
+
+        result.insert(result.end(), str.begin(), str.end());
+    }
+    else
+    {
+        uint8_t prefix = 128;
+        uint length = str.size();
+
+        if (length < std::numeric_limits<uint8_t>::max())
+        {
+            prefix += str.size(); // 128 dec == 0x80 hex
+            result.emplace_back(prefix);
+            result.emplace_back(sizeof(uint8_t));
+            result.insert(result.end(), str.begin(), str.end());
+        }
+        else if (length < std::numeric_limits<uint8_t>::max())
+        {
+            prefix += str.size(); // 128 dec == 0x80 hex
+            result.emplace_back(prefix);
+            result.emplace_back(sizeof(uint16_t));
+            result.insert(result.end(), str.begin(), str.end());
+        }
+        else if (length < sizeof(uint32_t))
+        {
+
+        }
+        else if (length < sizeof(uint64_t))
+        {
+
         }
     }
 
