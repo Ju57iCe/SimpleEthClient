@@ -44,14 +44,15 @@ int main(int argc, char *argv[])
 
 
     std::vector<std::any> values_to_encode;
-    values_to_encode.emplace_back(uint8_t(25));
-    values_to_encode.emplace_back(uint16_t(65535));
+    //values_to_encode.emplace_back(uint8_t(25));
+    //values_to_encode.emplace_back(uint16_t(65535));
 
+    values_to_encode.emplace_back(std::string("ethereum"));
     std::vector<uint8_t> res = Utils::RLP::Encode(values_to_encode);
 
 
-    std::cout << (unsigned)res[0] << " in hex " << Utils::Hex::ToHex(res[0]) << std::endl
-        << (unsigned)res[1] << " in hex " << Utils::Hex::ToHex(res[1]) << std::endl;
+    std::cout << (unsigned)res[0] << " in hex " << Utils::Hex::ToHex(res[0]) << std::endl;
+       // << (unsigned)res[1] << " in hex " << Utils::Hex::ToHex(res[1]) << std::endl;
 
     // ClientApp client(multiaddress);
     //client.run();
