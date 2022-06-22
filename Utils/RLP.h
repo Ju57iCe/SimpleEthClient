@@ -10,6 +10,8 @@
 
 #include <type_traits>
 
+#include "ByteUtils.h"
+
 template <typename T,
           typename std::enable_if<std::is_arithmetic<T>::value>::type* = nullptr>
 std::vector<uint8_t> splitValueToBytes(T const& value)
@@ -117,31 +119,29 @@ std::vector<uint8_t> Encode(std::string str)
     }
     else
     {
-        uint8_t prefix = 128;
         uint length = str.size();
 
-        if (length < std::numeric_limits<uint8_t>::max())
-        {
-            prefix += str.size(); // 128 dec == 0x80 hex
-            result.emplace_back(prefix);
-            result.emplace_back(sizeof(uint8_t));
-            result.insert(result.end(), str.begin(), str.end());
-        }
-        else if (length < std::numeric_limits<uint8_t>::max())
-        {
-            prefix += str.size(); // 128 dec == 0x80 hex
-            result.emplace_back(prefix);
-            result.emplace_back(sizeof(uint16_t));
-            result.insert(result.end(), str.begin(), str.end());
-        }
-        else if (length < sizeof(uint32_t))
-        {
+        uint container_size = 1;
+        while(container_size < length)
+            container_size*=2;
 
-        }
-        else if (length < sizeof(uint64_t))
-        {
 
+        uint container_bytes = 0;
+        uint test_length = length;
+        while (test_length != 0)
+        {
+            test_length >>= 8;
+            container_bytes++;
         }
+
+        uint8_t prefix = 183 + container_bytes;
+        result.emplace_back(prefix);
+
+        std::vector<uint8_t> container_size_vec = Utils::Byte::ToBytes(container_size);
+        Utils::Byte::TrimLeadingZeroBytes(container_size_vec);
+
+        result.insert(result.end(), container_size_vec.begin(), container_size_vec.end());
+        result.insert(result.end(), str.begin(), str.end());
     }
 
     return result;
