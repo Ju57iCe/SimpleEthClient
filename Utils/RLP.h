@@ -29,6 +29,13 @@ std::vector<uint8_t> splitValueToBytes(T const& value)
 
 namespace Utils::RLP
 {
+
+static constexpr uint8_t SINGLE_BYTE_PREFIX = 128;  // 128 dec == 0x80 hex
+static constexpr uint8_t SHORT_STRING_PREFIX = 128;  // 128 dec == 0x80 hex
+static constexpr uint8_t LONG_STRING_PREFIX = 183;   // 183 dec == 0xb7
+
+static constexpr uint8_t SHORT_STRING_MAX_RANGE = 55;
+
 std::vector<uint8_t> Encode(std::vector<std::any> values)
 {
     // ToDo - handle 0x7f, 0x80, 0xbf, 0xc0 variants
@@ -104,19 +111,27 @@ std::vector<uint8_t> Encode(std::string str)
 {
     std::vector<uint8_t> result;
 
+    /// Empty string encoding
     if (str.size() == 0)
     {
-        uint8_t prefix = 128 + str.size(); // 128 dec == 0x80 hex
+        uint8_t prefix = SHORT_STRING_PREFIX + str.size();
         result.emplace_back(prefix);
         result.emplace_back(0);
     }
-    else if (str.size() <= 55)
+    /// Single byte encoding
+    else if (str.size() == 1 && str[0] < SINGLE_BYTE_PREFIX) // ToDo research for single byte values greater that 128
     {
-        uint8_t prefix = 128 + str.size(); // 128 dec == 0x80 hex
+        result.emplace_back(str[0]);
+    }
+    /// Short string encoding
+    else if (str.size() <= SHORT_STRING_MAX_RANGE)
+    {
+        uint8_t prefix = SHORT_STRING_PREFIX + str.size();
         result.emplace_back(prefix);
 
         result.insert(result.end(), str.begin(), str.end());
     }
+    /// Long string encoding
     else
     {
         uint length = str.size();
@@ -124,7 +139,6 @@ std::vector<uint8_t> Encode(std::string str)
         uint container_size = 1;
         while(container_size < length)
             container_size*=2;
-
 
         uint container_bytes = 0;
         uint test_length = length;
@@ -134,7 +148,7 @@ std::vector<uint8_t> Encode(std::string str)
             container_bytes++;
         }
 
-        uint8_t prefix = 183 + container_bytes;
+        uint8_t prefix = LONG_STRING_PREFIX + container_bytes;
         result.emplace_back(prefix);
 
         std::vector<uint8_t> container_size_vec = Utils::Byte::ToBytes(container_size);
@@ -147,9 +161,61 @@ std::vector<uint8_t> Encode(std::string str)
     return result;
 }
 
-std::vector<std::any> Decode(std::vector<uint8_t>& data)
+std::string Decode(std::vector<uint8_t>& data)
 {
-    return std::vector<std::any>();
+    std::string res;
+    /// Empty string decoding
+    if (data.size() == 0)
+        return res;
+    /// Single byte decoding
+    else if (data.size() == 1)
+    {
+        res.append(data.begin(), data.end());
+    }
+    /// Short string decoding
+    else if (data[0] <= LONG_STRING_PREFIX)
+    {
+        uint32_t str_size = data[0] - SHORT_STRING_PREFIX;
+        res.reserve(str_size);
+        res = std::string(data.begin() + 1, data.begin() + (1 + str_size));
+    }
+    /// Long string decoding
+    else
+    {
+        uint32_t size_length = data[0] - LONG_STRING_PREFIX;
+
+        //uint32_t length_bytes_to_read = size_length / 255;
+
+        // String length is 1 byte
+        if (size_length == 1) // ToDo - Is this valid case?
+        {
+            uint8_t str_size = data[1];
+            res = std::string(data.begin() + 2, data.begin() + (2 + str_size));
+        }
+        // String length is 2 bytes
+        else if (size_length == 2)
+        {
+            uint16_t str_size = Utils::Byte::uint16FromBytes({data[1], data[2]});
+            res = std::string(data.begin() + 3, data.begin() + (3 + str_size));
+        }
+        // String length is 4 bytes
+        else if (size_length == 4)
+        {
+            uint32_t str_size = Utils::Byte::uint32FromBytes({data[1], data[2], data[3], data[4]});
+            res = std::string(data.begin() + 5, data.begin() + (5 + str_size));
+        }
+        // String length is 8 bytes
+        else if (size_length == 8)
+        {
+
+        }
+        else
+        {
+            assert(false); // Should not happen!
+        }
+    }
+
+    return res;
 }
 
 }

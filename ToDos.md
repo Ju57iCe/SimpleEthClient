@@ -1,0 +1,2 @@
+ - [ ] Make Byte utils endian independent
+ - [ ] Add tests for RLP encoding/decoding
