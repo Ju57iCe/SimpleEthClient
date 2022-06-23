@@ -1,2 +1,2 @@
- - [ ] Make Byte utils endian independent
+ - [ ] Make Byte utils endian independent - "positive RLP integers must be represented in big-endian binary form"
  - [x] Add tests for RLP encoding/decoding

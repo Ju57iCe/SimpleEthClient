@@ -30,11 +30,15 @@ std::vector<uint8_t> splitValueToBytes(T const& value)
 namespace Utils::RLP
 {
 
-static constexpr uint8_t SINGLE_BYTE_PREFIX = 128;  // 128 dec == 0x80 hex
-static constexpr uint8_t SHORT_STRING_PREFIX = 128;  // 128 dec == 0x80 hex
-static constexpr uint8_t LONG_STRING_PREFIX = 183;   // 183 dec == 0xb7
+static constexpr uint8_t SINGLE_BYTE_PREFIX = 128;      // 128 dec == 0x80 hex
+static constexpr uint8_t SHORT_STRING_PREFIX = 128;     // 128 dec == 0x80 hex
+static constexpr uint8_t LONG_STRING_PREFIX = 183;      // 183 dec == 0xb7
 
-static constexpr uint8_t SHORT_STRING_MAX_RANGE = 55;
+static constexpr uint8_t SHORT_LIST_PREFIX = 192;       // 192 dec == 0xc0
+static constexpr uint8_t LONG_LIST_PREFIX = 247;       // 247 dec == 0xf7
+
+static constexpr uint8_t SHORT_STRING_MAX_WIDTH = 55;
+static constexpr uint8_t SHORT_LIST_MAX_SIZE = 55;
 
 std::vector<uint8_t> Encode(std::vector<std::any> values)
 {
@@ -123,7 +127,7 @@ std::vector<uint8_t> Encode(std::string str)
         result.emplace_back(str[0]);
     }
     /// Short string encoding
-    else if (str.size() <= SHORT_STRING_MAX_RANGE)
+    else if (str.size() <= SHORT_STRING_MAX_WIDTH)
     {
         uint8_t prefix = SHORT_STRING_PREFIX + str.size();
         result.emplace_back(prefix);
@@ -218,6 +222,48 @@ std::string Decode(std::vector<uint8_t>& data)
     }
 
     return res;
+}
+
+
+std::vector<uint8_t> Encode(std::vector<std::string> strings)
+{
+    std::vector<uint8_t> result;
+
+    if (strings.empty())
+    {
+        result.emplace_back(SHORT_LIST_PREFIX);
+        return result;
+    }
+
+    uint32_t total_size = 0;
+    std::vector<std::vector<uint8_t>> strings_data;
+    for (uint32_t i = 0; i < strings.size(); ++i)
+    {
+        strings_data.emplace_back(Encode(strings[i]));
+        total_size += strings_data[i].size();
+    }
+
+    uint8_t prefix = 0;
+    if (total_size <= SHORT_LIST_MAX_SIZE)
+    {
+        prefix = SHORT_LIST_PREFIX + total_size;
+    }
+    else
+    {
+        //prefix = LONG_LIST_PREFIX + total_size;
+    }
+
+    result.emplace_back(prefix);
+
+    for (auto& str_data : strings_data)
+        result.insert(result.end(), str_data.begin(), str_data.end());
+
+    return result;
+}
+
+std::vector<std::string> DecodeList(std::vector<uint8_t>& data)
+{
+    return std::vector<std::string>();
 }
 
 }
