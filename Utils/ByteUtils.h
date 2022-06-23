@@ -22,6 +22,42 @@ namespace Utils::Byte
             bytes.erase(bytes.begin(), bytes.begin() + elementsToRemove);
     }
 
+    std::array<uint8_t, 4> ConstructUint32FromData(std::vector<uint8_t>& data,
+                                                    uint32_t size_length)
+    {
+        std::array<uint8_t, 4> res;
+        int32_t bytes_size = res.size();
+
+        for (int32_t i = 0; i < bytes_size; ++i)
+        {
+            bool pad_with_zero = (bytes_size - (int32_t)size_length - i) > 0;
+            if (pad_with_zero)
+                res[i] = 0;
+            else
+                res[i] = data[i];
+        }
+
+        return res;
+    }
+
+    std::array<uint8_t, 8> ConstructUint64FromData(std::vector<uint8_t>& data,
+                                                    uint32_t size_length)
+    {
+        std::array<uint8_t, 8> res;
+        int32_t bytes_size = res.size();
+
+        for (int32_t i = 0; i < bytes_size; ++i)
+        {
+            bool pad_with_zero = (bytes_size - (int32_t)size_length - i) > 0;
+            if (pad_with_zero)
+                res[i] = 0;
+            else
+                res[i] = data[i];
+        }
+
+        return res;
+    }
+
     std::vector<uint8_t> ToBytes(uint16_t value)
     {
         std::vector<uint8_t> result;
@@ -30,7 +66,7 @@ namespace Utils::Byte
         return result;
     }
 
-    uint16_t uint16FromBytes(std::array<uint16_t, 2> bytes)
+    uint16_t uint16FromBytes(std::array<uint8_t, 2> bytes)
     {
         uint16_t result = bytes[0] << 8 |
                             bytes[1];
@@ -47,7 +83,7 @@ namespace Utils::Byte
         return result;
     }
 
-    uint32_t uint32FromBytes(std::array<uint16_t, 4> bytes)
+    uint32_t uint32FromBytes(std::array<uint8_t, 4> bytes)
     {
         uint32_t result = bytes[0] << 24 |
                             bytes[1] << 16 |
@@ -70,7 +106,7 @@ namespace Utils::Byte
         return result;
     }
 
-    uint64_t uint64FromBytes(std::array<uint16_t, 8> bytes)
+    uint64_t uint64FromBytes(std::array<uint8_t, 8> bytes)
     {
         uint64_t result = uint64_t(
                             ((uint64_t)(bytes[0]) << (uint64_t)56) |

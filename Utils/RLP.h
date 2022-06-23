@@ -116,7 +116,6 @@ std::vector<uint8_t> Encode(std::string str)
     {
         uint8_t prefix = SHORT_STRING_PREFIX + str.size();
         result.emplace_back(prefix);
-        result.emplace_back(0);
     }
     /// Single byte encoding
     else if (str.size() == 1 && str[0] < SINGLE_BYTE_PREFIX) // ToDo research for single byte values greater that 128
@@ -151,7 +150,8 @@ std::vector<uint8_t> Encode(std::string str)
         uint8_t prefix = LONG_STRING_PREFIX + container_bytes;
         result.emplace_back(prefix);
 
-        std::vector<uint8_t> container_size_vec = Utils::Byte::ToBytes(container_size);
+        // ToDo check why to bytes is missing a zero when using uint32t
+        std::vector<uint8_t> container_size_vec = Utils::Byte::ToBytes(length);
         Utils::Byte::TrimLeadingZeroBytes(container_size_vec);
 
         result.insert(result.end(), container_size_vec.begin(), container_size_vec.end());
@@ -165,10 +165,11 @@ std::string Decode(std::vector<uint8_t>& data)
 {
     std::string res;
     /// Empty string decoding
-    if (data.size() == 0)
+    if (data.size() == 0 ||
+        (data.size() == 1 && data[0] == SHORT_STRING_PREFIX))
         return res;
     /// Single byte decoding
-    else if (data.size() == 1)
+    else if (data.size() == sizeof(uint8_t))
     {
         res.append(data.begin(), data.end());
     }
@@ -193,21 +194,22 @@ std::string Decode(std::vector<uint8_t>& data)
             res = std::string(data.begin() + 2, data.begin() + (2 + str_size));
         }
         // String length is 2 bytes
-        else if (size_length == 2)
+        else if (size_length == sizeof(uint16_t))
         {
             uint16_t str_size = Utils::Byte::uint16FromBytes({data[1], data[2]});
-            res = std::string(data.begin() + 3, data.begin() + (3 + str_size));
+            res = std::string(data.begin() + 1 + size_length, data.begin() + (1 + size_length + str_size));
         }
-        // String length is 4 bytes
-        else if (size_length == 4)
+        // String length is 3 or 4 bytes
+        else if (size_length <= sizeof(uint32_t))
         {
-            uint32_t str_size = Utils::Byte::uint32FromBytes({data[1], data[2], data[3], data[4]});
-            res = std::string(data.begin() + 5, data.begin() + (5 + str_size));
+            uint32_t str_size = Utils::Byte::uint32FromBytes(Utils::Byte::ConstructUint32FromData(data, size_length));
+            res = std::string(data.begin() + 1 + size_length, data.begin() + (1 + size_length + str_size));
         }
         // String length is 8 bytes
-        else if (size_length == 8)
+        else if (size_length <= 8)
         {
-
+            uint32_t str_size = Utils::Byte::uint64FromBytes(Utils::Byte::ConstructUint64FromData(data, size_length));
+            res = std::string(data.begin() + 1 + size_length, data.begin() + (1 + size_length + str_size));
         }
         else
         {

@@ -5,6 +5,8 @@
 
 set(CMAKE_BUILD_TYPE Debug)
 
+add_subdirectory(tests)
+
 FIND_PACKAGE(Boost COMPONENTS program_options REQUIRED )
 
 add_executable(SimpleEthClient
@@ -12,7 +14,7 @@ add_executable(SimpleEthClient
     ClientApp.cpp
     crypto/KeyGenerator.cpp
     session.cpp
-    )
+)
 
 target_include_directories(SimpleEthClient PUBLIC ${BOOST_INCLUDE_DIRS})
 
@@ -28,4 +30,4 @@ target_link_libraries(SimpleEthClient
     asio_scheduler
     p2p_multiaddress
     Boost::program_options
-    )
+)
