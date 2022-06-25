@@ -1,2 +1,3 @@
  - [ ] Make Byte utils endian independent - "positive RLP integers must be represented in big-endian binary form"
+ - [ ] Use Pre-computed container sizes when checking if data fits
  - [x] Add tests for RLP encoding/decoding
