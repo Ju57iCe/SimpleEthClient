@@ -149,4 +149,17 @@ uint64_t GetIntFromBytes(uint32_t size_length, std::vector<uint8_t>& data)
     return str_size;
 }
 
+uint32_t BytesToFit(uint64_t length)
+{
+    uint32_t containerBytes = 0;
+    uint32_t testLength = length;
+    while (testLength != 0)
+    {
+        testLength >>= 8;
+        containerBytes++;
+    }
+
+    return containerBytes;
+}
+
 }

@@ -125,7 +125,7 @@ TEST(RLP, LongStringList)
     EXPECT_EQ(decoded_list[7], "dogdogdogdog");
 }
 
-TEST(RLP, MixedLongShortStringList)
+TEST(RLP, ShortLongStringList)
 {
     std::vector<std::string> list;
     list.emplace_back("cat");
@@ -139,7 +139,7 @@ TEST(RLP, MixedLongShortStringList)
 
     std::vector<uint8_t> bytes = Utils::RLP::Encode(list);
     EXPECT_EQ(bytes[0], 248);
-    EXPECT_EQ(bytes[1], 104);
+    EXPECT_EQ(bytes[1], 68);
 
     std::vector<std::string> decoded_list = Utils::RLP::DecodeList(bytes);
     EXPECT_EQ(decoded_list.size(), 8);
@@ -151,6 +151,22 @@ TEST(RLP, MixedLongShortStringList)
     EXPECT_EQ(decoded_list[5], "dogdogdogdog");
     EXPECT_EQ(decoded_list[6], "cat");
     EXPECT_EQ(decoded_list[7], "dogdogdogdog");
+}
+
+TEST(RLP, MixedLongShortStringList)
+{
+    std::vector<std::string> list;
+    list.emplace_back("cat");
+    list.emplace_back("dogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdog");
+
+    std::vector<uint8_t> bytes = Utils::RLP::Encode(list);
+    EXPECT_EQ(bytes[0], 248);
+    EXPECT_EQ(bytes[1], 90);
+
+    std::vector<std::string> decoded_list = Utils::RLP::DecodeList(bytes);
+    EXPECT_EQ(decoded_list.size(), 2);
+    EXPECT_EQ(decoded_list[0], "cat");
+    EXPECT_EQ(decoded_list[1], "dogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdog");
 }
 
 TEST(RLP, NestedLists)

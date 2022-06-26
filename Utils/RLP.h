@@ -40,77 +40,6 @@ static constexpr uint8_t LONG_LIST_PREFIX = 247;       // 247 dec == 0xf7
 static constexpr uint8_t SHORT_STRING_MAX_WIDTH = 55;
 static constexpr uint8_t SHORT_LIST_MAX_SIZE = 55;
 
-std::vector<uint8_t> Encode(std::vector<std::any> values)
-{
-    // ToDo - handle 0x7f, 0x80, 0xbf, 0xc0 variants
-    std::vector<uint8_t> result;
-
-    if (values.size() == 1 &&
-        values[0].type() == typeid(uint8_t) &&
-        std::any_cast<uint8_t>(values[0]) <= 127)
-    {
-        result.emplace_back(std::any_cast<uint8_t>(values[0]));
-        return result;
-    }
-    else
-    {
-        for(uint32_t i = 0; i < values.size(); ++i)
-        {
-            if(values[i].has_value())
-            {
-                try
-                {
-                    if (values[i].type() == typeid(uint8_t) ||
-                        values[i].type() == typeid(uint16_t) ||
-                        values[i].type() == typeid(uint32_t) ||
-                        values[i].type() == typeid(uint64_t)
-                        // values[i].type() == typeid(double) ||  // ToDo Research
-                        // values[i].type() == typeid(float) ||
-                        )
-                    {
-                        std::vector<uint8_t> bytes;
-
-                        if (values[i].type() == typeid(uint8_t))
-                        {
-                            bytes = splitValueToBytes(std::any_cast<uint8_t>(values[i]));
-                        }
-                        else if (values[i].type() == typeid(uint16_t))
-                        {
-                            bytes = splitValueToBytes(std::any_cast<uint16_t>(values[i]));
-                        }
-                        else if (values[i].type() == typeid(uint32_t))
-                        {
-                            bytes = splitValueToBytes(std::any_cast<uint32_t>(values[i]));
-                        }
-                        else if(values[i].type() == typeid(uint64_t))
-                        {
-                            bytes = splitValueToBytes(std::any_cast<uint64_t>(values[i]));
-                        }
-
-                        result.insert(result.end(), bytes.begin(), bytes.end());
-                    }
-                    else if (values[i].type() == typeid(std::string))
-                    {
-                        //std::cout << "string: " << std::any_cast<std::string>(values[i]) << "\n";
-                    }
-                    else if (values[i].type() == typeid(std::vector<uint64_t>)) // ToDo specify desired vector instantiations
-                    {
-                        //std::cout << "vector: " << std::any_cast<std::vector>(values[i]) << "\n";
-                    }
-                }
-                catch(const std::bad_any_cast& e)
-                {
-                    std::cout << e.what() << '\n';
-                    assert(false);
-                    return std::vector<uint8_t>();
-                }
-            }
-        }
-    }
-
-    return result;
-}
-
 std::vector<uint8_t> Encode(std::string str)
 {
     std::vector<uint8_t> result;
@@ -138,18 +67,7 @@ std::vector<uint8_t> Encode(std::string str)
     else
     {
         uint length = str.size();
-
-        uint container_size = 1;
-        while(container_size < length)
-            container_size*=2;
-
-        uint container_bytes = 0;
-        uint test_length = length;
-        while (test_length != 0)
-        {
-            test_length >>= 8;
-            container_bytes++;
-        }
+        uint container_bytes = Utils::Byte::BytesToFit(length);
 
         uint8_t prefix = LONG_STRING_PREFIX + container_bytes;
         result.emplace_back(prefix);
@@ -188,6 +106,7 @@ std::string Decode(std::vector<uint8_t>& data)
     {
         uint32_t size_length = data[0] - LONG_STRING_PREFIX;
         uint64_t str_size = Utils::Byte::GetIntFromBytes(size_length, data);
+        res.reserve(str_size);
         res = std::string(data.begin() + 1 + size_length, data.begin() + (1 + size_length + str_size));
     }
 
@@ -222,18 +141,7 @@ std::vector<uint8_t> Encode(std::vector<std::string> strings)
     else
     {
         uint length = total_size;
-
-        uint container_size = 1;
-        while(container_size < length)
-            container_size*=2;
-
-        uint container_bytes = 0;
-        uint test_length = length;
-        while (test_length != 0)
-        {
-            test_length >>= 8;
-            container_bytes++;
-        }
+        uint container_bytes = Utils::Byte::BytesToFit(length);
 
         prefix = LONG_LIST_PREFIX + container_bytes;
 
@@ -259,48 +167,41 @@ std::vector<std::string> DecodeList(std::vector<uint8_t>& data)
     {
         return result;
     }
-    else if (data[0] < LONG_LIST_PREFIX)
+
+    uint32_t list_contents_total_size;
+    uint32_t number_of_bytes = 0;
+    if (data[0] < LONG_LIST_PREFIX)
     {
-        uint32_t list_contents_total_size = data[0] - SHORT_LIST_PREFIX;
-        uint32_t bytes_to_process = list_contents_total_size;
-        uint32_t processed_bytes = list_contents_total_size - bytes_to_process;
-
-        while(bytes_to_process != processed_bytes)
-        {
-            uint32_t marker = processed_bytes + 1;
-            uint32_t string_size = data[marker] - SHORT_STRING_PREFIX;
-
-            result.emplace_back(std::string(data.begin() + marker + 1,
-                                            data.begin() + marker + 1 + string_size));
-
-            processed_bytes += 1 + string_size;
-        }
+        list_contents_total_size = data[0] - SHORT_LIST_PREFIX;
     }
     else
     {
-        uint32_t number_of_bytes = data[0] - LONG_LIST_PREFIX;
-        uint64_t list_size = Utils::Byte::GetIntFromBytes(number_of_bytes, data);
+        number_of_bytes = data[0] - LONG_LIST_PREFIX;
+        list_contents_total_size = Utils::Byte::GetIntFromBytes(number_of_bytes, data) + 1;
+    }
 
-        uint container_bytes = 0;
-        uint test_length = list_size;
-        while (test_length != 0)
+    uint32_t bytes_to_process = list_contents_total_size;
+    uint32_t processed_bytes = list_contents_total_size - bytes_to_process + number_of_bytes;
+
+    while(bytes_to_process != processed_bytes)
+    {
+        uint32_t marker = processed_bytes + 1;
+        uint32_t prefix_and_bytes_count = 0;
+        
+        if (data[marker] <= LONG_STRING_PREFIX)
         {
-            test_length >>= 8;
-            container_bytes++;
+            prefix_and_bytes_count = 1;
+        }
+        else
+        {
+            uint32_t size_length = data[marker] - LONG_STRING_PREFIX;
+            prefix_and_bytes_count = 1 + size_length;
         }
 
-        uint32_t bytes_to_process = data.size() - 1 - container_bytes;
-        uint32_t processed_bytes = list_size - bytes_to_process;
-        while(bytes_to_process != processed_bytes)
-        {
-            uint32_t marker = processed_bytes + 1 + 1;
-            uint32_t string_size = data[marker] - SHORT_STRING_PREFIX;
+        std::vector<uint8_t> string_data(data.begin() + marker, data.end()); // ToDo - inefficient!!!
+        result.emplace_back(Decode(string_data));
 
-            result.emplace_back(std::string(data.begin() + marker + 1,
-                                            data.begin() + marker + 1 + string_size));
-
-            processed_bytes += 1 + string_size;
-        }
+        processed_bytes += prefix_and_bytes_count + result.back().size();
     }
 
     return result;
