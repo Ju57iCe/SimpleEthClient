@@ -207,4 +207,40 @@ std::vector<std::string> DecodeList(std::vector<uint8_t>& data)
     return result;
 }
 
+std::vector<uint8_t> Encode(std::vector<std::any> input)
+{
+    uint32_t total_size = 0;
+    std::vector<std::vector<uint8_t>> input_data;
+    for (uint32_t i = 0; i < input.size(); ++i)
+    {
+        if(input[i].type() == typeid(std::vector<std::string>))
+        {
+            std::vector<std::string> nested_list = std::any_cast<std::vector<std::string>>(input[i]);
+            input_data.emplace_back(Encode(nested_list));
+        }
+        else if (input[i].type() == typeid(std::string))
+        {
+            std::string str = std::any_cast<std::string>(input[i]);
+            input_data.emplace_back(Encode(str));
+        }
+        else if (input[i].type() == typeid(std::vector<std::any>))
+        {
+            std::vector<std::any> any_vec = std::any_cast<std::vector<std::any>>(input[i]);
+            input_data.emplace_back(Encode(any_vec));
+        }
+
+        //total_size += strings_data[i].size();
+    }
+
+    for(auto& v : input_data)
+    {
+        for(auto& ch : v)
+            std::cout << ch;
+        std::cout << std::endl;
+    }
+    int a = 42;
+
+    return std::vector<uint8_t>();
+}
+
 }

@@ -1,7 +1,3 @@
-/**
- * Copyright Soramitsu Co., Ltd. All Rights Reserved.
- * SPDX-License-Identifier: Apache-2.0
- */
 #include <iostream>
 #include <string>
 #include <boost/program_options.hpp>
@@ -42,6 +38,26 @@ int main(int argc, char *argv[])
     std::cout << "Client multiaddress : " << multiaddress << std :: endl;
     std::cout << "Running as a bootsrap node : " << (bootstrap ? "True" : "False") << std :: endl;
 
+    std::vector<std::string> list;
+    list.emplace_back("cat");
+    list.emplace_back("dogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdog");
+
+    std::string str("123");
+
+    std::any any_str = "test";
+
+    std::any test_vector_any = std::vector<std::any>({"123", "456","789"}); 
+
+    std::vector<std::any> any_vec;
+    any_vec.emplace_back(test_vector_any);
+
+    //any_vec.emplace_back(str);
+    //any_vec.emplace_back(any_str);
+
+    std::vector<uint8_t> bytes = Utils::RLP::Encode(any_vec);
+    //std::vector<std::string> decoded_list = Utils::RLP::DecodeList(bytes);
+
+    int a = 42;
     // ClientApp client(multiaddress);
     //client.run();
 }
