@@ -46,13 +46,15 @@ int main(int argc, char *argv[])
 
     std::any any_str = "test";
 
-    std::any test_vector_any = std::vector<std::any>({"123", "456","789"}); 
+    std::vector<std::string> vec1 = {"123", "456", "789"};
+    std::vector<std::string> vec2 = {"321", "654", "987"};
+
+    std::any any_one = std::make_any<std::vector<std::string>>(vec1);
+    std::any any_two = std::make_any<std::vector<std::string>>(vec2);
 
     std::vector<std::any> any_vec;
-    any_vec.emplace_back(test_vector_any);
-
-    //any_vec.emplace_back(str);
-    //any_vec.emplace_back(any_str);
+    any_vec.push_back(any_one);
+    any_vec.push_back(any_two);
 
     std::vector<uint8_t> bytes = Utils::RLP::Encode(any_vec);
     //std::vector<std::string> decoded_list = Utils::RLP::DecodeList(bytes);
