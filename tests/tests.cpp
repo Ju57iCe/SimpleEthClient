@@ -7,7 +7,7 @@
 
 TEST(RLP, EmptyString)
 {
-    std::vector<uint8_t> bytes = Utils::RLP::Encode("");
+    std::vector<uint8_t> bytes = Utils::RLP::Encode(std::string(""));
 
     EXPECT_EQ(bytes.size(), 1);
     EXPECT_EQ(bytes[0], 128);
@@ -18,7 +18,7 @@ TEST(RLP, EmptyString)
 
 TEST(RLP, SingleLetterString)
 {
-    std::vector<uint8_t> bytes = Utils::RLP::Encode("A");
+    std::vector<uint8_t> bytes = Utils::RLP::Encode(std::string("A"));
 
     EXPECT_EQ(bytes.size(), 1);
     EXPECT_EQ(bytes[0], 65);
@@ -29,7 +29,7 @@ TEST(RLP, SingleLetterString)
 
 TEST(RLP, ShortString)
 {
-    std::vector<uint8_t> bytes = Utils::RLP::Encode("doge");
+    std::vector<uint8_t> bytes = Utils::RLP::Encode(std::string("doge"));
 
     EXPECT_EQ(bytes.size(), 5);
     EXPECT_EQ(bytes[0], 132);

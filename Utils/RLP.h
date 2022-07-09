@@ -113,7 +113,6 @@ std::string Decode(std::vector<uint8_t>& data)
     return res;
 }
 
-
 std::vector<uint8_t> Encode(std::vector<std::string> strings)
 {
     std::vector<uint8_t> result;
@@ -207,65 +206,61 @@ std::vector<std::string> DecodeList(std::vector<uint8_t>& data)
     return result;
 }
 
-std::vector<uint8_t> Encode(std::vector<std::any> input)
+std::vector<uint8_t> Encode(std::any input)
 {
-    uint32_t total_size = 0;
-    std::vector<std::vector<uint8_t>> input_data;
-    for (uint32_t i = 0; i < input.size(); ++i)
+    std::vector<uint8_t> result, item_data;
+
+    if(input.type() == typeid(std::vector<std::string>))
     {
-        std::vector<uint8_t> encoded_data;
-        if(input[i].type() == typeid(std::vector<std::string>))
+        std::vector<std::string> nested_list = std::any_cast<std::vector<std::string>>(input);
+        item_data = Encode(nested_list);
+    }
+    else if (input.type() == typeid(std::string))
+    {
+        std::string str = std::any_cast<std::string>(input);
+        item_data = Encode(str);
+    }
+    else if (input.type() == typeid(std::vector<std::any>))
+    {
+        std::vector<std::any> any_vec = std::any_cast<std::vector<std::any>>(input);
+
+        std::vector<std::vector<uint8_t>> list_data;
+        for (uint32_t i = 0; i < any_vec.size(); ++i)
         {
-            std::vector<std::string> nested_list = std::any_cast<std::vector<std::string>>(input[i]);
-            encoded_data = Encode(nested_list);
-            input_data.emplace_back(encoded_data);
-        }
-        else if (input[i].type() == typeid(std::string))
-        {
-            std::string str = std::any_cast<std::string>(input[i]);
-            encoded_data = Encode(str);
-            input_data.push_back(encoded_data);
-        }
-        else if (input[i].type() == typeid(std::vector<std::any>))
-        {
-            std::vector<std::any> any_vec = std::any_cast<std::vector<std::any>>(input[i]);
-            encoded_data = Encode(any_vec);
-
-            std::vector<uint8_t> list_data;
-            if (encoded_data.size() <= SHORT_LIST_MAX_SIZE)
-            {
-                list_data.emplace_back(SHORT_LIST_PREFIX + encoded_data.size());
-            }
-            else
-            {
-                uint length = encoded_data.size();
-                uint container_bytes = Utils::Byte::BytesToFit(length);
-
-                std::vector<uint8_t> container_size_vec = Utils::Byte::ToBytes(length);
-                Utils::Byte::TrimLeadingZeroBytes(container_size_vec);
-
-                list_data.emplace_back(LONG_LIST_PREFIX + container_bytes);
-                list_data.insert(list_data.end(), container_size_vec.begin(), container_size_vec.end());
-            }
-
-            list_data.insert(list_data.end(), encoded_data.begin(), encoded_data.end());
-
-            input_data.emplace_back(list_data);
+            std::vector<uint8_t> list_item_data = Encode(any_vec[i]);
+            list_data.push_back(list_item_data);
         }
 
-        total_size += encoded_data.size();
+        if (list_data.size() <= SHORT_LIST_MAX_SIZE)
+        {
+            item_data.emplace_back(SHORT_LIST_PREFIX + list_data.size());
+        }
+        else
+        {
+            uint length = list_data.size();
+            uint container_bytes = Utils::Byte::BytesToFit(length);
+
+            std::vector<uint8_t> container_size_vec = Utils::Byte::ToBytes(length);
+            Utils::Byte::TrimLeadingZeroBytes(container_size_vec);
+
+            item_data.emplace_back(LONG_LIST_PREFIX + container_bytes);
+            item_data.insert(item_data.end(), container_size_vec.begin(), container_size_vec.end());
+        }
+
+        for (auto& list_item_data : list_data)
+            item_data.insert(item_data.end(), list_item_data.begin(), list_item_data.end());
+
     }
 
-    std::vector<uint8_t> result;
     uint8_t prefix = 0;
-    if (total_size <= SHORT_LIST_MAX_SIZE)
+    if (item_data.size() <= SHORT_LIST_MAX_SIZE)
     {
-        prefix = SHORT_LIST_PREFIX + total_size;
+        prefix = SHORT_LIST_PREFIX + item_data.size();
         result.emplace_back(prefix);
     }
     else
     {
-        uint length = total_size;
+        uint length = item_data.size();
         uint container_bytes = Utils::Byte::BytesToFit(length);
 
         prefix = LONG_LIST_PREFIX + container_bytes;
@@ -277,9 +272,79 @@ std::vector<uint8_t> Encode(std::vector<std::any> input)
         result.insert(result.end(), container_size_vec.begin(), container_size_vec.end());
     }
 
-    for (auto& data : input_data)
-        result.insert(result.end(), data.begin(), data.end());
+    result.insert(result.end(), item_data.begin(), item_data.end());
 
+    return result;
+}
+
+std::any DecodeAny(std::vector<uint8_t>& data)
+{
+    std::any result;
+
+    if (data.empty() ||
+        (data.size() == 1 && data[0] == SHORT_LIST_PREFIX))
+    {
+        return result;
+    }
+
+    uint32_t list_contents_total_size;
+    uint32_t number_of_bytes = 0;
+    if (data[0] < LONG_LIST_PREFIX)
+    {
+        list_contents_total_size = data[0] - SHORT_LIST_PREFIX;
+    }
+    else
+    {
+        number_of_bytes = data[0] - LONG_LIST_PREFIX;
+        list_contents_total_size = Utils::Byte::GetIntFromBytes(number_of_bytes, data) + 1;
+    }
+
+    uint32_t bytes_to_process = list_contents_total_size;
+    uint32_t processed_bytes = list_contents_total_size - bytes_to_process + number_of_bytes;
+
+    while(bytes_to_process != processed_bytes)
+    {
+        uint32_t marker = processed_bytes + 1;
+        uint32_t prefix_and_bytes_count = 0;
+        uint32_t item_size = 0;
+
+        if (data[marker] <= LONG_STRING_PREFIX)
+        {
+            prefix_and_bytes_count = 1;
+            uint32_t str_len = data[marker] - SHORT_STRING_PREFIX;
+            std::vector<uint8_t> string_data(data.begin() + marker, data.begin() + marker + 1 + str_len); // ToDo - inefficient!!!
+            std::string str_res = Decode(string_data);
+            item_size = str_res.size();
+            result = str_res;
+        }
+        else if (data[marker] <= SHORT_LIST_PREFIX)
+        {
+            uint32_t size_length = data[marker] - LONG_STRING_PREFIX;
+
+            std::vector<uint8_t> size_buff(data.begin() + marker, data.begin() + marker + 1 + size_length);
+
+            uint64_t str_size = Utils::Byte::GetIntFromBytes(size_length, size_buff);
+            prefix_and_bytes_count = 1 + size_buff.size() - 1;
+
+            std::vector<uint8_t> string_data(data.begin() + marker, data.begin() + marker + 1 + str_size); // ToDo - inefficient!!!
+            std::string str_res = Decode(string_data);
+            item_size = str_res.size();
+            result = str_res;
+        }
+        else if (data[marker] <= LONG_LIST_PREFIX)
+        {
+
+        }
+        else
+        {
+
+        }
+
+        // std::vector<uint8_t> string_data(data.begin() + marker, data.end()); // ToDo - inefficient!!!
+        // result.emplace_back(Decode(string_data));
+
+        processed_bytes += prefix_and_bytes_count + item_size;
+    }
 
     return result;
 }

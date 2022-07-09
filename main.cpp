@@ -38,26 +38,38 @@ int main(int argc, char *argv[])
     std::cout << "Client multiaddress : " << multiaddress << std :: endl;
     std::cout << "Running as a bootsrap node : " << (bootstrap ? "True" : "False") << std :: endl;
 
-    std::vector<std::string> list;
-    list.emplace_back("cat");
-    list.emplace_back("dogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdog");
+    // std::vector<std::string> list;
+    // list.emplace_back("cat");
+    // list.emplace_back("dogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdog");
 
-    std::string str("123");
+    // std::string str("123");
 
-    std::any any_str = "test";
+    // std::any any_str = "test";
 
-    std::vector<std::string> vec1 = {"123", "456", "789"};
-    std::vector<std::string> vec2 = {"321", "654", "987"};
+    // std::vector<std::string> vec1 = {"123", "456", "789"};
+    // std::vector<std::string> vec2 = {"321", "654", "987"};
 
-    std::any any_one = std::make_any<std::vector<std::string>>(vec1);
-    std::any any_two = std::make_any<std::vector<std::string>>(vec2);
+    // std::any any_one = std::make_any<std::vector<std::string>>(vec1);
+    // std::any any_two = std::make_any<std::vector<std::string>>(vec2);
 
-    std::vector<std::any> any_vec;
-    any_vec.push_back(any_one);
-    any_vec.push_back(any_two);
+    // std::vector<std::any> any_vec;
+    // any_vec.push_back(any_one);
+    // any_vec.push_back(any_two);
+
+    // std::vector<std::any> final_any;
+    // final_any.emplace_back(any_vec);
+    // std::vector<uint8_t> bytes = Utils::RLP::Encode(final_any);
+    //std::vector<std::string> decoded_list = Utils::RLP::DecodeList(bytes);
+
+    std::vector<std::string> vec = {"testtesttesttesttesttesttesttesttesttesttesttesttesttest", "1" };
+
+    // std::any any_str1 = std::string("testtesttesttesttesttesttesttesttesttesttesttesttesttest");
+    // std::any any_str2 = std::string("1");
+
+    std::any any_vec = std::make_any<std::vector<std::string>>(vec);
 
     std::vector<uint8_t> bytes = Utils::RLP::Encode(any_vec);
-    //std::vector<std::string> decoded_list = Utils::RLP::DecodeList(bytes);
+    std::any any_res = Utils::RLP::DecodeAny(bytes);
 
     int a = 42;
     // ClientApp client(multiaddress);
