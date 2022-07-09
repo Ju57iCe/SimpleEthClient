@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 
 #include <vector>
+#include <any>
 #include <cstdint>
 
 #include "../Utils/RLP.h"
@@ -169,7 +170,75 @@ TEST(RLP, MixedLongShortStringList)
     EXPECT_EQ(decoded_list[1], "dogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdog");
 }
 
-TEST(RLP, NestedLists)
+TEST(RLP, DecodeAnyEmptyString)
 {
-    EXPECT_EQ(0, 1);
+    std::string str("");
+    std::any any_str = std::make_any<std::string>(str);
+
+    std::vector<uint8_t> bytes = Utils::RLP::Encode(any_str);
+    EXPECT_EQ(bytes.size(), 1);
+    EXPECT_EQ(bytes[0], 128);
+
+    std::any any_res = Utils::RLP::DecodeAny(bytes);
+    std::string res_str = std::any_cast<std::string>(any_res);
+    EXPECT_EQ(str.size(), res_str.size());
+}
+
+TEST(RLP, DecodeAnyEmptyList)
+{
+    std::vector<std::string> vec;
+    std::any any_vec = std::make_any<std::vector<std::string>>(vec);
+
+    std::vector<uint8_t> bytes = Utils::RLP::Encode(any_vec);
+    EXPECT_EQ(bytes.size(), 1);
+    EXPECT_EQ(bytes[0], 192);
+
+    std::any any_res = Utils::RLP::DecodeAny(bytes);
+    std::vector<std::string> res_vec = std::any_cast<std::vector<std::string>>(any_res);
+    EXPECT_EQ(vec.size(), res_vec.size());
+}
+
+TEST(RLP, NestedShortList)
+{
+    std::vector<std::string> vec_one = { "111" };
+    std::vector<std::string> vec_two = { "222" };
+
+    std::any any_vec_one = std::make_any<std::vector<std::string>>(vec_one);
+    std::any any_vec_two = std::make_any<std::vector<std::string>>(vec_two);
+
+    std::vector<std::any> nested_any_vec;
+    nested_any_vec.push_back(any_vec_one);
+    nested_any_vec.push_back(any_vec_two);
+
+    std::vector<uint8_t> bytes = Utils::RLP::Encode(nested_any_vec);
+
+    EXPECT_EQ(bytes[0], Utils::RLP::SHORT_LIST_PREFIX +
+                        2 * sizeof(Utils::RLP::SHORT_LIST_PREFIX) +
+                        2 * sizeof(Utils::RLP::SHORT_STRING_PREFIX) +
+                        vec_one[0].size() +
+                        vec_two[0].size());
+
+    EXPECT_EQ(bytes[1], Utils::RLP::SHORT_LIST_PREFIX +
+                        sizeof(Utils::RLP::SHORT_LIST_PREFIX) +
+                        vec_one[0].size());
+    EXPECT_EQ(bytes[2], Utils::RLP::SHORT_STRING_PREFIX + vec_one[0].size());
+
+    EXPECT_EQ(bytes[6], Utils::RLP::SHORT_LIST_PREFIX +
+                        sizeof(Utils::RLP::SHORT_LIST_PREFIX) +
+                        vec_one[0].size());
+    EXPECT_EQ(bytes[7], Utils::RLP::SHORT_STRING_PREFIX + vec_two[0].size());
+
+    std::any any_res = Utils::RLP::DecodeAny(bytes);
+
+    std::vector<std::any> any_vec_res = std::any_cast<std::vector<std::any>>(any_res);
+    std::vector<std::string> str_vec_res_one = std::any_cast<std::vector<std::string>>(any_vec_res[0]);
+    std::vector<std::string> str_vec_res_two = std::any_cast<std::vector<std::string>>(any_vec_res[1]);
+
+    EXPECT_EQ(vec_one.size(), str_vec_res_one.size());
+    EXPECT_EQ(vec_one[0].size(), str_vec_res_one[0].size());
+    EXPECT_EQ(vec_one[0], str_vec_res_one[0]);
+
+    EXPECT_EQ(vec_two.size(), str_vec_res_two.size());
+    EXPECT_EQ(vec_two[0].size(), str_vec_res_two[0].size());
+    EXPECT_EQ(vec_two[0], str_vec_res_two[0]);
 }
