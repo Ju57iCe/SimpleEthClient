@@ -70,6 +70,20 @@ std::vector<uint8_t> GenerateStringPrefix(std::string& str)
     return prefix_res;
 }
 
+std::vector<uint8_t> GenerateLongListPrefix(uint32_t length)
+{
+    std::vector<uint8_t> res;
+    uint8_t container_bytes = Utils::Byte::BytesToFit(length);
+
+    std::vector<uint8_t> container_size_vec = Utils::Byte::ToBytes(length);
+    Utils::Byte::TrimLeadingZeroBytes(container_size_vec);
+
+    res.emplace_back(Utils::RLP::LONG_LIST_PREFIX + container_bytes);
+    res.insert(res.end(), container_size_vec.begin(), container_size_vec.end());
+
+    return res;
+}
+
 }
 
 namespace Utils::RLP
@@ -147,16 +161,8 @@ std::vector<uint8_t> Encode(std::vector<std::string> strings)
     }
     else
     {
-        uint length = total_size;
-        uint container_bytes = Utils::Byte::BytesToFit(length);
-
-        prefix = Utils::RLP::LONG_LIST_PREFIX + container_bytes;
-
-        std::vector<uint8_t> container_size_vec = Utils::Byte::ToBytes(length);
-        Utils::Byte::TrimLeadingZeroBytes(container_size_vec);
-
-        result.emplace_back(prefix);
-        result.insert(result.end(), container_size_vec.begin(), container_size_vec.end());
+        std::vector<uint8_t> prefix = GenerateLongListPrefix(total_size);
+        result.insert(result.end(), prefix.begin(), prefix.end());
     }
 
     for (auto& str_data : strings_data)
@@ -252,14 +258,8 @@ std::vector<uint8_t> Encode(std::any input)
         }
         else
         {
-            uint length = list_total_size;
-            uint container_bytes = Utils::Byte::BytesToFit(length);
-
-            std::vector<uint8_t> container_size_vec = Utils::Byte::ToBytes(length);
-            Utils::Byte::TrimLeadingZeroBytes(container_size_vec);
-
-            result.emplace_back(Utils::RLP::LONG_LIST_PREFIX + container_bytes);
-            result.insert(result.end(), container_size_vec.begin(), container_size_vec.end());
+            std::vector<uint8_t> prefix = GenerateLongListPrefix(list_total_size);
+            result.insert(result.end(), prefix.begin(), prefix.end());
         }
 
         for (auto& list_item_data : list_data)
