@@ -16,6 +16,12 @@
 namespace
 {
 
+struct ItemProperties
+{
+    uint32_t size = 0;
+    uint32_t lengthInBytes = 0;
+};
+
 template <typename T,
           typename std::enable_if<std::is_arithmetic<T>::value>::type* = nullptr>
 std::vector<uint8_t> splitValueToBytes(T const& value)
@@ -84,6 +90,35 @@ std::vector<uint8_t> GenerateLongListPrefix(uint32_t length)
     return res;
 }
 
+ItemProperties GetItemSizeFromData(std::vector<uint8_t>& data)
+{
+    ItemProperties res;
+
+    if (data[0] <= Utils::RLP::LONG_STRING_PREFIX)
+    {
+        res.size = data[0] - Utils::RLP::SHORT_STRING_PREFIX;
+    }
+    else if (data[0] <= Utils::RLP::SHORT_LIST_PREFIX)
+    {
+        res.lengthInBytes = data[0] - Utils::RLP::LONG_STRING_PREFIX;
+        res.size = Utils::Byte::GetIntFromBytes(res.lengthInBytes, data);
+    }
+    // else if ()
+    // {
+
+    // }
+    // else if ()
+    // {
+
+    // }
+    else
+    {
+        assert(false);
+    }
+
+    return res;
+}
+
 }
 
 namespace Utils::RLP
@@ -110,28 +145,24 @@ std::string Decode(std::vector<uint8_t>& data)
     /// Empty string decoding
     if (data.size() == 0 ||
         (data.size() == 1 && data[0] == Utils::RLP::SHORT_STRING_PREFIX))
+    {
         return res;
+    }
     /// Single byte decoding
     else if (data.size() == sizeof(uint8_t))
     {
         res.append(data.begin(), data.end());
     }
-    /// Short string decoding
-    else if (data[0] <= Utils::RLP::LONG_STRING_PREFIX)
-    {
-        uint32_t str_size = data[0] - Utils::RLP::SHORT_STRING_PREFIX;
-        res.reserve(str_size);
-        res = std::string(data.begin() + 1, data.begin() + (1 + str_size));
-    }
-    /// Long string decoding
     else
     {
-        uint32_t size_length = data[0] - Utils::RLP::LONG_STRING_PREFIX;
-        uint64_t str_size = Utils::Byte::GetIntFromBytes(size_length, data);
-        res.reserve(str_size);
-        res = std::string(data.begin() + 1 + size_length, data.begin() + (1 + size_length + str_size));
-    }
+        ItemProperties item = GetItemSizeFromData(data);
+        res.reserve(item.size);
 
+        if (item.lengthInBytes == 0)
+            res = std::string(data.begin() + 1, data.begin() + (1 + item.size));
+        else
+            res = std::string(data.begin() + 1 + item.lengthInBytes, data.begin() + (1 + item.lengthInBytes + item.size));
+    }
     return res;
 }
 
