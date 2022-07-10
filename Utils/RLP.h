@@ -309,20 +309,10 @@ std::any DecodeAny(std::vector<uint8_t>& data)
         return result;
     }
 
-    uint32_t list_contents_total_size;
-    uint32_t number_of_bytes = 0;
-    if (data[0] < Utils::RLP::LONG_LIST_PREFIX)
-    {
-        list_contents_total_size = data[0] - Utils::RLP::SHORT_LIST_PREFIX;
-    }
-    else
-    {
-        number_of_bytes = data[0] - LONG_LIST_PREFIX;
-        list_contents_total_size = Utils::Byte::GetIntFromBytes(number_of_bytes, data) + 1;
-    }
+    ItemProperties listProps = GetItemSizeFromData(data);
 
-    uint32_t bytes_to_process = list_contents_total_size;
-    uint32_t processed_bytes = list_contents_total_size - bytes_to_process + number_of_bytes;
+    uint32_t bytes_to_process = listProps.size;
+    uint32_t processed_bytes = listProps.size - bytes_to_process + listProps.lengthInBytes;
 
     while(bytes_to_process != processed_bytes)
     {
@@ -330,59 +320,50 @@ std::any DecodeAny(std::vector<uint8_t>& data)
         uint32_t prefix_and_bytes_count = 0;
         uint32_t item_size = 0;
 
-        if (data[marker] <= Utils::RLP::LONG_STRING_PREFIX) // Short string
+        ItemProperties itemProps;
+
+        if (data[marker] < Utils::RLP::SHORT_LIST_PREFIX)
         {
-            prefix_and_bytes_count = 1;
-            uint32_t str_len = data[marker] - Utils::RLP::SHORT_STRING_PREFIX;
-            std::vector<uint8_t> string_data(data.begin() + marker, data.begin() + marker + 1 + str_len); // ToDo - inefficient!!!
+            ItemProperties stringProps = GetItemSizeFromData(data);
+            prefix_and_bytes_count = 1 + stringProps.lengthInBytes;
+
+            std::vector<uint8_t> string_data(data.begin() + marker + listProps.lengthInBytes, data.begin() + marker + listProps.lengthInBytes + listProps.size); // ToDo - inefficient!!!
+
             std::string str_res = Decode(string_data);
             item_size = str_res.size();
             result = str_res;
             string_results.emplace_back(str_res);
         }
-        else if (data[marker] <= Utils::RLP::SHORT_LIST_PREFIX) // Long string
+        else
         {
-            uint32_t size_length = data[marker] - Utils::RLP::LONG_STRING_PREFIX;
+            std::any decoded_any;
+            std::vector<uint8_t> list_data;
+            if (data[marker] < Utils::RLP::LONG_LIST_PREFIX)
+            {
+                prefix_and_bytes_count = 1;
+                uint32_t list_len = data[marker] - Utils::RLP::SHORT_LIST_PREFIX;
 
-            std::vector<uint8_t> size_buff(data.begin() + marker, data.begin() + marker + 1 + size_length);
+                list_data = std::vector<uint8_t>(data.begin() + marker, data.begin() + marker + 1 + list_len); // ToDo - inefficient!!!
+                item_size = list_len;
+            }
+            else
+            {
+                uint32_t list_len = data[marker] - Utils::RLP::LONG_LIST_PREFIX;
+                std::vector<uint8_t> size_buff(data.begin() + marker, data.begin() + marker + 1 + list_len);
 
-            uint64_t str_size = Utils::Byte::GetIntFromBytes(size_length, size_buff);
-            prefix_and_bytes_count = 1 + size_buff.size() - 1;
+                uint64_t list_size = Utils::Byte::GetIntFromBytes(list_len, size_buff);
+                prefix_and_bytes_count = 1 + size_buff.size();
 
-            std::vector<uint8_t> string_data(data.begin() + marker, data.begin() + marker + 1 + str_size); // ToDo - inefficient!!!
-            std::string str_res = Decode(string_data);
-            item_size = str_res.size();
-            result = str_res;
-            string_results.emplace_back(str_res);
-        }
-        else if (data[marker] <= Utils::RLP::LONG_LIST_PREFIX) // Short list
-        {
-            prefix_and_bytes_count = 1;
-            uint32_t list_len = data[marker] - Utils::RLP::SHORT_LIST_PREFIX;
+                list_data = std::vector<uint8_t>(data.begin() + marker + list_len + 1, data.begin() + marker + list_len + 1 + list_size); // ToDo - inefficient!!!
+                item_size = list_size;
+            }
 
-            std::vector<uint8_t> list_data(data.begin() + marker, data.begin() + marker + 1 + list_len); // ToDo - inefficient!!!
-            std::any decoded_any = Utils::RLP::DecodeAny(list_data);
-            item_size = list_len;
-            list_results.emplace_back(decoded_any);
-        }
-        else // Long list
-        {
-            uint32_t size_length = data[marker] - Utils::RLP::LONG_LIST_PREFIX;
-
-            std::vector<uint8_t> size_buff(data.begin() + marker, data.begin() + marker + 1 + size_length);
-
-            uint64_t list_size = Utils::Byte::GetIntFromBytes(size_length, size_buff);
-            prefix_and_bytes_count = 1 + size_buff.size();
-
-            std::vector<uint8_t> list_data(data.begin() + marker + size_length + 1, data.begin() + marker + size_length  + 1 + list_size); // ToDo - inefficient!!!
-            std::any decoded_any = Utils::RLP::DecodeAny(list_data);
-            item_size = list_size;
+            decoded_any = Utils::RLP::DecodeAny(list_data);
             list_results.emplace_back(decoded_any);
         }
 
         processed_bytes += prefix_and_bytes_count + item_size;
     }
-
 
     if (list_results.empty() && string_results.empty())
     {
@@ -397,7 +378,6 @@ std::any DecodeAny(std::vector<uint8_t>& data)
             res = string_results;
         return res;
     }
-
 }
 
 }
