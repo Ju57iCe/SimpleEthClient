@@ -103,17 +103,14 @@ ItemProperties GetItemSizeFromData(std::vector<uint8_t>& data)
         res.lengthInBytes = data[0] - Utils::RLP::LONG_STRING_PREFIX;
         res.size = Utils::Byte::GetIntFromBytes(res.lengthInBytes, data);
     }
-    // else if ()
-    // {
-
-    // }
-    // else if ()
-    // {
-
-    // }
+    else if (data[0] < Utils::RLP::LONG_LIST_PREFIX)
+    {
+        res.size = data[0] - Utils::RLP::SHORT_LIST_PREFIX;
+    }
     else
     {
-        assert(false);
+        res.lengthInBytes = data[0] - Utils::RLP::LONG_LIST_PREFIX;
+        res.size = Utils::Byte::GetIntFromBytes(res.lengthInBytes, data) + 1;
     }
 
     return res;
@@ -155,14 +152,15 @@ std::string Decode(std::vector<uint8_t>& data)
     }
     else
     {
-        ItemProperties item = GetItemSizeFromData(data);
-        res.reserve(item.size);
+        ItemProperties stringProps = GetItemSizeFromData(data);
+        res.reserve(stringProps.size);
 
-        if (item.lengthInBytes == 0)
-            res = std::string(data.begin() + 1, data.begin() + (1 + item.size));
-        else
-            res = std::string(data.begin() + 1 + item.lengthInBytes, data.begin() + (1 + item.lengthInBytes + item.size));
+        if (stringProps.lengthInBytes == 0) // Short string decoding
+            res = std::string(data.begin() + 1, data.begin() + (1 + stringProps.size));
+        else                         // Long string decoding
+            res = std::string(data.begin() + 1 + stringProps.lengthInBytes, data.begin() + (1 + stringProps.lengthInBytes + stringProps.size));
     }
+
     return res;
 }
 
@@ -212,20 +210,10 @@ std::vector<std::string> DecodeList(std::vector<uint8_t>& data)
         return result;
     }
 
-    uint32_t list_contents_total_size;
-    uint32_t number_of_bytes = 0;
-    if (data[0] < LONG_LIST_PREFIX)
-    {
-        list_contents_total_size = data[0] - SHORT_LIST_PREFIX;
-    }
-    else
-    {
-        number_of_bytes = data[0] - LONG_LIST_PREFIX;
-        list_contents_total_size = Utils::Byte::GetIntFromBytes(number_of_bytes, data) + 1;
-    }
+    ItemProperties listProps = GetItemSizeFromData(data);
 
-    uint32_t bytes_to_process = list_contents_total_size;
-    uint32_t processed_bytes = list_contents_total_size - bytes_to_process + number_of_bytes;
+    uint32_t bytes_to_process = listProps.size;
+    uint32_t processed_bytes = listProps.size - bytes_to_process + listProps.lengthInBytes;
 
     while(bytes_to_process != processed_bytes)
     {
