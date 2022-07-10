@@ -94,11 +94,11 @@ ItemProperties GetItemSizeFromData(std::vector<uint8_t>& data)
 {
     ItemProperties res;
 
-    if (data[0] <= Utils::RLP::LONG_STRING_PREFIX)
+    if (data[0] < Utils::RLP::LONG_STRING_PREFIX)
     {
         res.size = data[0] - Utils::RLP::SHORT_STRING_PREFIX;
     }
-    else if (data[0] <= Utils::RLP::SHORT_LIST_PREFIX)
+    else if (data[0] < Utils::RLP::SHORT_LIST_PREFIX)
     {
         res.lengthInBytes = data[0] - Utils::RLP::LONG_STRING_PREFIX;
         res.size = Utils::Byte::GetIntFromBytes(res.lengthInBytes, data);
