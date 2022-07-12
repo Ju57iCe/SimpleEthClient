@@ -217,20 +217,10 @@ std::vector<std::string> DecodeList(std::vector<uint8_t>& data)
 
     while(bytes_to_process != processed_bytes)
     {
-        uint32_t marker = processed_bytes;
-        uint32_t prefix_and_bytes_count = 0;
+        uint32_t prefix_and_bytes_count = data[processed_bytes] <= LONG_STRING_PREFIX ? 1 :
+                                            1 + data[processed_bytes] - LONG_STRING_PREFIX;
 
-        if (data[marker] <= LONG_STRING_PREFIX)
-        {
-            prefix_and_bytes_count = 1;
-        }
-        else
-        {
-            uint32_t size_length = data[marker] - LONG_STRING_PREFIX;
-            prefix_and_bytes_count = 1 + size_length;
-        }
-
-        std::vector<uint8_t> string_data(data.begin() + marker, data.end()); // ToDo - inefficient!!!
+        std::vector<uint8_t> string_data(data.begin() + processed_bytes, data.end()); // ToDo - inefficient!!!
         result.emplace_back(Decode(string_data));
 
         processed_bytes += prefix_and_bytes_count + result.back().size();
