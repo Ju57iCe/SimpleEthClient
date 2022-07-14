@@ -20,9 +20,16 @@ add_executable(
   tests
   tests.cpp
 )
-target_link_libraries(
-    tests
-  gtest_main
+
+if(NOT ${IGNORE_CODE_STYLE_CHECKS})
+    set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/../cmake)
+    include(CodeStyle)
+    set_code_style(${PROJECT_NAME} lower_case ignore_headers "${extra_flags}")
+endif()
+
+target_link_libraries(tests PRIVATE
+                        utils
+                        gtest_main
 )
 
 include(GoogleTest)

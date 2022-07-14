@@ -8,7 +8,7 @@
 #include <tuple>
 
 #include "node_config.h"
-#include "crypto/KeyGenerator.h"
+#include "Crypto/KeyGenerator.h"
 #include "session.h"
 
 #include <boost/beast.hpp>

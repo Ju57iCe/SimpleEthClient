@@ -5,6 +5,7 @@
 #include <cstdint>
 
 #include "../Utils/RLP.h"
+#include "../Utils/RLPConstants.h"
 
 TEST(RLP, EmptyString)
 {

@@ -3,6 +3,7 @@
 #include <vector>
 #include <cstdint>
 #include <array>
+#include <assert.h>
 
 namespace Utils::Byte
 {

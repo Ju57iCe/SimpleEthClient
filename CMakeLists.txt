@@ -1,24 +1,36 @@
-#
-# Copyright Soramitsu Co., Ltd. All Rights Reserved.
-# SPDX-License-Identifier: Apache-2.0
-#
+cmake_minimum_required(VERSION 3.8)
 
+project(SimpleEthClient)
+
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+set(IGNORE_CODE_STYLE_CHECKS OFF)
 set(CMAKE_BUILD_TYPE Debug)
-
-add_subdirectory(tests)
 
 FIND_PACKAGE(Boost COMPONENTS program_options REQUIRED )
 
-add_executable(SimpleEthClient
-    main.cpp
+add_subdirectory(tests)
+add_subdirectory(Utils)
+
+
+set (SRC_LIST main.cpp
+    Crypto/KeyGenerator.cpp
+    Utils/RLP.cpp
     ClientApp.cpp
-    crypto/KeyGenerator.cpp
     session.cpp
 )
 
-target_include_directories(SimpleEthClient PUBLIC ${BOOST_INCLUDE_DIRS})
+add_executable(${PROJECT_NAME} ${SRC_LIST})
 
-target_link_libraries(SimpleEthClient
+if(NOT ${IGNORE_CODE_STYLE_CHECKS})
+    set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
+    include(CodeStyle)
+    set_code_style(${PROJECT_NAME} lower_case ignore_headers "${extra_flags}")
+endif()
+
+target_include_directories(${PROJECT_NAME} PUBLIC ${BOOST_INCLUDE_DIRS})
+
+target_link_libraries(${PROJECT_NAME} PRIVATE
+    utils
     p2p_basic_host
     p2p_default_network
     p2p_peer_repository

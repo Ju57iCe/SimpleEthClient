@@ -2,7 +2,7 @@
 
 std::tuple<std::string, std::string> GenerateKey()
 {
-    std::string keyStr;
+    std::string key_str;
     EVP_PKEY *pkey = NULL;
     EVP_PKEY_CTX *pctx = EVP_PKEY_CTX_new_id(EVP_PKEY_ED25519, NULL);
     EVP_PKEY_keygen_init(pctx);
