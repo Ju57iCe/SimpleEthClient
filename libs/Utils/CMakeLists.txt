@@ -9,7 +9,7 @@ file(GLOB_RECURSE SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/*.c"
 add_library(${LIB_NAME} ${SOURCES})
 
 if(NOT ${IGNORE_CODE_STYLE_CHECKS})
-    set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/../cmake)
+    set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/../../cmake)
     include(CodeStyle)
     set_code_style(${LIB_NAME} lower_case ignore_headers "${extra_flags}")
 endif()
