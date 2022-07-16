@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.4.3)
 
 set(LIB_NAME utils)
 
+set(CMAKE_BUILD_TYPE Debug)
+
 file(GLOB_RECURSE SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/*.c"
                           "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp"
                           "${CMAKE_CURRENT_SOURCE_DIR}/*.h"

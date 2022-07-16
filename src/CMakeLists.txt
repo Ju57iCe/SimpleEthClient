@@ -22,7 +22,7 @@ if(NOT ${IGNORE_CODE_STYLE_CHECKS})
 endif()
 
 target_include_directories(${PROJECT_NAME} PUBLIC ${BOOST_INCLUDE_DIRS})
-target_include_directories(${PROJECT_NAME} PUBLIC hash_library)
+target_include_directories(${PROJECT_NAME} PUBLIC ${ROOT_DIR}/libs)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
     utils

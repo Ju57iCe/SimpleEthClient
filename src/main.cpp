@@ -2,7 +2,8 @@
 #include <string>
 #include <boost/program_options.hpp>
 
-#include "../libs/hash-library/keccak.h"
+#include <hash-library/keccak.h>
+#include <Utils/MPT.h>
 
 #include "ClientApp.h"
 
@@ -43,6 +44,16 @@ int main(int argc, char *argv[])
 
     const char* buffer = "How are you";
     std::cout << keccak256(buffer, 11) << std::endl;
+
+    Utils::MPT tree;
+
+    tree.add_node("a71135", 45);
+    tree.add_node("a77d337", 1);
+    tree.add_node("a7f9365", 1);
+    tree.add_node("a77d397", 1);
+
+
+    int a = 42;
 
 //    ClientApp client(multiaddress);
 //    client.run();
