@@ -22,9 +22,11 @@ if(NOT ${IGNORE_CODE_STYLE_CHECKS})
 endif()
 
 target_include_directories(${PROJECT_NAME} PUBLIC ${BOOST_INCLUDE_DIRS})
+target_include_directories(${PROJECT_NAME} PUBLIC hash_library)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
     utils
+    hash_library
     p2p_basic_host
     p2p_default_network
     p2p_peer_repository

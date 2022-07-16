@@ -2,8 +2,7 @@
 #include <string>
 #include <boost/program_options.hpp>
 
-#include "Utils/RLP.h"
-#include "Utils/Hex.h"
+#include "../libs/hash-library/keccak.h"
 
 #include "ClientApp.h"
 
@@ -38,6 +37,13 @@ int main(int argc, char *argv[])
     std::cout << "Client multiaddress : " << multiaddress << std :: endl;
     std::cout << "Running as a bootsrap node : " << (bootstrap ? "True" : "False") << std :: endl;
 
-    ClientApp client(multiaddress);
-    client.run();
+    Keccak keccak256;
+
+    std::cout << keccak256("Hello World") << std::endl;
+
+    const char* buffer = "How are you";
+    std::cout << keccak256(buffer, 11) << std::endl;
+
+//    ClientApp client(multiaddress);
+//    client.run();
 }
