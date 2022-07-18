@@ -27,10 +27,8 @@ if(NOT ${IGNORE_CODE_STYLE_CHECKS})
     set_code_style(${PROJECT_NAME} lower_case ignore_headers "${extra_flags}")
 endif()
 
-target_link_libraries(tests PRIVATE
-                        utils
-                        gtest_main
-)
+target_link_libraries(tests PRIVATE utils)
+target_link_libraries(tests PRIVATE gtest_main)
 
 include(GoogleTest)
 gtest_discover_tests(tests)
