@@ -30,6 +30,7 @@ private:
     void print_contents_internal(MPT::Node* parent);
 private:
     Node m_root;
+    uint8_t m_recursion_level;
 
     static constexpr uint8_t EXTENSION_NODE_EVEN_PREFIX = 0;
     static constexpr uint8_t EXTENSION_NODE_ODD_PREFIX = 1;

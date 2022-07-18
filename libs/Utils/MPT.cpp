@@ -53,13 +53,15 @@ void MPT::add_node(std::string key, uint64_t value)
             transform_leaf_node(node, nibbles_matched);
         }
 
-        std::unique_ptr<Node> branch_node(new Node());
-        branch_node->shared_nibbles = std::string(hash.begin() + nibbles_matched, hash.end());
+        uint8_t branch_point = ASCIIHexToInt[(uint8_t)hash[nibbles_matched]];
+        node->branches[branch_point].reset(new Node());
+
+        Node* branch_node = node->branches[branch_point].get();
+
+        std::string nibbes_to_add(hash.begin() + nibbles_matched, hash.end());
+        branch_node->shared_nibbles = std::move(nibbes_to_add);
         branch_node->value = value;
         branch_node->prefix = branch_node->shared_nibbles.size() % 2 == 0 ? LEAF_NODE_EVEN_PREFIX : LEAF_NODE_ODD_PREFIX;
-
-        uint8_t branch_point = ASCIIHexToInt[(uint8_t)hash[nibbles_matched]];
-        node->branches[branch_point] = std::move(branch_node);
     }
     else
     {
@@ -112,21 +114,35 @@ void MPT::transform_leaf_node(MPT::Node* node, uint32_t nibbles_matched)
 
 void MPT::print_contents()
 {
+    m_recursion_level = 0;
+    std::cout << "===================================" << std::endl;
     print_contents_internal(&m_root);
+    m_recursion_level = 0;
 }
 
 void MPT::print_contents_internal(MPT::Node* node)
 {
-    std::cout << "Node: " << node->shared_nibbles << std::endl;
-    for (uint8_t i = 0; i < node->branches.size(); ++i)
+    m_recursion_level++;
+    std::cout << "Trie level - " << std::to_string(m_recursion_level) << std::endl;
+    std::cout << "Node: " << node->shared_nibbles << ", value " << node->value << std::endl;
+
+    if (node->has_branches)
     {
-        if (node->branches[i] != nullptr)
+        for (uint8_t i = 0; i < node->branches.size(); ++i)
         {
-            std::cout << "Branch - " <<  std::to_string(i) << " ";
-            print_contents_internal(node->branches[i].get());
+            if (node->branches[i] != nullptr)
+            {
+                std::cout << "Branch - " <<  std::hex << (uint32_t)i << ", value: " << node->branches[i].get()->value << std::endl;
+                print_contents_internal(node->branches[i].get());
+            }
         }
     }
+    else
+    {
+        std::cout << "No branches";
+    }
     std::cout << std::endl;
+    m_recursion_level--;
 }
 
 std::tuple<bool, MPT::Node*> MPT::find_parent(std::string key, MPT::Node* node)
