@@ -53,15 +53,13 @@ void MPT::add_node(std::string key, uint64_t value)
             transform_leaf_node(node, nibbles_matched);
         }
 
-        uint8_t branch_point = ASCIIHexToInt[(uint8_t)hash[nibbles_matched]];
-        node->branches[branch_point] = std::unique_ptr<Node>(new Node());
-
-        Node* branch_node = node->branches[branch_point].get();
+        std::unique_ptr<Node> branch_node(new Node());
         branch_node->shared_nibbles = std::string(hash.begin() + nibbles_matched, hash.end());
         branch_node->value = value;
         branch_node->prefix = branch_node->shared_nibbles.size() % 2 == 0 ? LEAF_NODE_EVEN_PREFIX : LEAF_NODE_ODD_PREFIX;
 
-        int a = 53;
+        uint8_t branch_point = ASCIIHexToInt[(uint8_t)hash[nibbles_matched]];
+        node->branches[branch_point] = std::move(branch_node);
     }
     else
     {
@@ -114,7 +112,21 @@ void MPT::transform_leaf_node(MPT::Node* node, uint32_t nibbles_matched)
 
 void MPT::print_contents()
 {
-    std::cout << m_root.shared_nibbles;
+    print_contents_internal(&m_root);
+}
+
+void MPT::print_contents_internal(MPT::Node* node)
+{
+    std::cout << "Node: " << node->shared_nibbles << std::endl;
+    for (uint8_t i = 0; i < node->branches.size(); ++i)
+    {
+        if (node->branches[i] != nullptr)
+        {
+            std::cout << "Branch - " <<  std::to_string(i) << " ";
+            print_contents_internal(node->branches[i].get());
+        }
+    }
+    std::cout << std::endl;
 }
 
 std::tuple<bool, MPT::Node*> MPT::find_parent(std::string key, MPT::Node* node)

@@ -27,6 +27,7 @@ private:
     std::tuple<bool, MPT::Node*> find_parent(std::string key, Node* node);
     void add_key_to_parent(std::string key, MPT::Node* parent);
     void transform_leaf_node(MPT::Node* node, uint32_t nibbles_matched);
+    void print_contents_internal(MPT::Node* parent);
 private:
     Node m_root;
 

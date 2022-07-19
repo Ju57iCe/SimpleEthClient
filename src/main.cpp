@@ -48,9 +48,13 @@ int main(int argc, char *argv[])
     Utils::MPT tree;
 
     tree.add_node("ca", 2);
+    tree.print_contents();
     tree.add_node("cac", 2);
+    tree.print_contents();
     tree.add_node("cb", 2);
+    tree.print_contents();
     tree.add_node("caac", 2);
+    tree.print_contents();
     tree.add_node("a71135", 45);
     tree.add_node("a77d337", 1);
     tree.add_node("a7f9365", 1);
