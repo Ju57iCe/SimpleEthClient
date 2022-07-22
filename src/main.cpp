@@ -47,18 +47,24 @@ int main(int argc, char *argv[])
 
     Utils::MPT tree;
 
-    tree.add_node("ca", 1);
+    tree.add_node("abb", 2);
     tree.print_contents();
-    tree.add_node("cac", 2);
+    tree.add_node("abbc", 2);
     tree.print_contents();
-    tree.add_node("cb", 3);
+    tree.add_node("abbd", 2);
     tree.print_contents();
-    tree.add_node("caac", 4);
+    tree.add_node("abbcc", 2);
     tree.print_contents();
-    tree.add_node("a71135", 45);
-    tree.add_node("a77d337", 1);
-    tree.add_node("a7f9365", 1);
-    tree.add_node("a77d397", 1);
+    //tree.add_node("cac", 2);
+    //tree.print_contents();
+    // tree.add_node("cb", 2);
+    // tree.print_contents();
+    // tree.add_node("caac", 2);
+    // tree.print_contents();
+    // tree.add_node("a71135", 45);
+    // tree.add_node("a77d337", 1);
+    // tree.add_node("a7f9365", 1);
+    // tree.add_node("a77d397", 1);
 
 
     int a = 42;

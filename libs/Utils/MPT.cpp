@@ -22,20 +22,15 @@ int ASCIIHexToInt[] =
 namespace Utils
 {
 
-void MPT::add_node(std::string key, uint64_t value)
+std::tuple<bool, uint64_t, MPT::Node*> MPT::find_parent(std::string key, MPT::Node* node, uint64_t total_nibbles_matched)
 {
-    //Keccak keccak256;
-    std::string hash = key; //keccak256(entry);
-    if (!m_root.shared_nibbles.empty())
+    bool node_found = false;
+    uint64_t nibbles_matched = 0;
+    while(!node_found)
     {
-        // if (key == node->shared_nibbles)
-        //     return std::make_tuple(true, node);
-        Node* node = &m_root;
-
-        uint8_t nibbles_matched = 0;
-        for (uint8_t i = 0; i < node->shared_nibbles.size(); ++i)
+        for (uint64_t i = 0; i < node->shared_nibbles.size(); ++i)
         {
-            if (node->shared_nibbles[i] == hash[i])
+            if (node->shared_nibbles[i] == key[i])
             {
                 nibbles_matched++;
                 continue;
@@ -46,22 +41,57 @@ void MPT::add_node(std::string key, uint64_t value)
             }
         }
 
-        bool should_rebalance = nibbles_matched != node->shared_nibbles.size();
-
-        if (should_rebalance)
+        if (nibbles_matched == 0)
         {
-            transform_leaf_node(node, nibbles_matched);
+            transform_leaf_node(node, 0);
+            return {true, nibbles_matched, node};
         }
+        else
+        {
+            if (nibbles_matched == node->shared_nibbles.size())
+            {
+                uint8_t branch_point = ASCIIHexToInt[(uint8_t)key[nibbles_matched]];
+                if (node->branches[branch_point].get() != nullptr)
+                {
+                    std::string new_key(key.begin() + nibbles_matched, key.end());
+                    return find_parent(new_key, node->branches[branch_point].get(), total_nibbles_matched + nibbles_matched);
+                }
+                else
+                {
+                    return {true, total_nibbles_matched + nibbles_matched, node};
+                }
+            }
+        }
+    }
 
-        uint8_t branch_point = ASCIIHexToInt[(uint8_t)hash[nibbles_matched]];
-        node->branches[branch_point].reset(new Node());
+    return std::make_tuple(false, nibbles_matched, node);
+}
 
-        Node* branch_node = node->branches[branch_point].get();
+void MPT::add_node(std::string key, uint64_t value)
+{
+    //Keccak keccak256;
+    std::string hash = key; //keccak256(entry);
+    if (!m_root.shared_nibbles.empty())
+    {
+        auto res = find_parent(key, &m_root);
+        bool success = std::get<0>(res);
+        if (!success)
+            return;
 
-        std::string nibbes_to_add(hash.begin() + nibbles_matched, hash.end());
-        branch_node->shared_nibbles = std::move(nibbes_to_add);
+        uint64_t nibbles_matched = std::get<1>(res);
+        Node* node = std::get<2>(res);
+
+        std::unique_ptr<Node> branch_node(new Node());
+
+
+        std::string shared_str(hash.begin() + nibbles_matched, hash.end());
+        branch_node->shared_nibbles = shared_str;
         branch_node->value = value;
         branch_node->prefix = branch_node->shared_nibbles.size() % 2 == 0 ? LEAF_NODE_EVEN_PREFIX : LEAF_NODE_ODD_PREFIX;
+
+        uint8_t branch_point = ASCIIHexToInt[(uint8_t)hash[nibbles_matched]];
+        node->branches[branch_point] = std::move(branch_node);
+        node->has_branches = true;
     }
     else
     {
@@ -114,40 +144,35 @@ void MPT::transform_leaf_node(MPT::Node* node, uint32_t nibbles_matched)
 
 void MPT::print_contents()
 {
-    m_recursion_level = 0;
-    std::cout << "===================================" << std::endl;
-    print_contents_internal(&m_root);
-    m_recursion_level = 0;
+    std::cout<< "=======================" << std::endl;
+    print_contents_recursive(&m_root);
 }
 
-void MPT::print_contents_internal(MPT::Node* node)
+void MPT::print_contents_recursive(MPT::Node* node, uint32_t branch_level)
 {
-    m_recursion_level++;
-    std::cout << "Trie level - " << std::to_string(m_recursion_level) << std::endl;
-    std::cout << "Node: " << node->shared_nibbles << ", value " << node->value << std::endl;
+    std::cout << "Level " << branch_level << " Node: " << node->shared_nibbles;
 
     if (node->has_branches)
     {
+        std::cout << ", branches:";
+
         for (uint8_t i = 0; i < node->branches.size(); ++i)
+            if (node->branches[i] != nullptr) std::cout << " " << std::hex << (uint32_t)i << std::dec;
+
+        std::cout << std::endl;
+    for (uint8_t i = 0; i < node->branches.size(); ++i)
+    {
+        if (node->branches[i] != nullptr)
         {
-            if (node->branches[i] != nullptr)
-            {
-                std::cout << "Branch - " <<  std::hex << (uint32_t)i << ", value: " << node->branches[i].get()->value << std::endl;
-                print_contents_internal(node->branches[i].get());
-            }
+                print_contents_recursive(node->branches[i].get(), branch_level+1);
         }
     }
-    else
-    {
-        std::cout << "No branches";
-    }
     std::cout << std::endl;
-    m_recursion_level--;
 }
-
-std::tuple<bool, MPT::Node*> MPT::find_parent(std::string key, MPT::Node* node)
+    else
 {
-    return std::make_tuple(false, node);
+        std::cout << " no branches." << std::endl;
+    }
 }
 
 void MPT::add_key_to_parent(std::string key, MPT::Node* parent)

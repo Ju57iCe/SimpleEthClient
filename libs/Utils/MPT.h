@@ -24,10 +24,10 @@ public:
     void add_node(std::string entry, uint64_t value);
     void print_contents();
 private:
-    std::tuple<bool, MPT::Node*> find_parent(std::string key, Node* node);
+    std::tuple<bool, uint64_t, MPT::Node*> find_parent(std::string key, MPT::Node* node, uint64_t total_nibbles_matched = 0);
     void add_key_to_parent(std::string key, MPT::Node* parent);
     void transform_leaf_node(MPT::Node* node, uint32_t nibbles_matched);
-    void print_contents_internal(MPT::Node* parent);
+    void print_contents_recursive(MPT::Node* parent, uint32_t branch_level = 0);
 private:
     Node m_root;
     uint8_t m_recursion_level;
