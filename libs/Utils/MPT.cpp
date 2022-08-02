@@ -1,6 +1,7 @@
 #include "MPT.h"
 
 #include "RLP.h"
+#include <hash-library/keccak.h>
 
 #include <iostream>
 
@@ -71,6 +72,8 @@ std::tuple<bool, uint64_t, MPT::Node*> MPT::find_parent(std::string key, MPT::No
 
 void MPT::update(std::string key, std::vector<uint8_t> value)
 {
+    Keccak keccak256;
+
     std::string hash = key;
     if (!m_root.shared_nibbles.empty())
     {
@@ -101,6 +104,12 @@ void MPT::update(std::string key, std::vector<uint8_t> value)
         m_root.shared_nibbles = hash;
         m_root.value = value;
         m_root.prefix = hash.size() % 2 == 0 ? LEAF_NODE_EVEN_PREFIX : LEAF_NODE_ODD_PREFIX;
+
+        std::vector<std::string> list = { key, std::string(value.begin(), value.end())};
+        std::vector<uint8_t> rlp_encoded_node = Utils::RLP::Encode(list);
+
+        m_root.hash = keccak256(std::string(rlp_encoded_node.begin(), rlp_encoded_node.end()));
+
         recalculate_hashes(&m_root);
     }
 }
