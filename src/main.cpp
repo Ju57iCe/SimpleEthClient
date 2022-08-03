@@ -3,7 +3,9 @@
 #include <boost/program_options.hpp>
 
 #include <hash-library/keccak.h>
+
 #include <Utils/MPT.h>
+#include <Utils/RLP.h>
 
 #include "ClientApp.h"
 
@@ -47,24 +49,25 @@ int main(int argc, char *argv[])
 
     Utils::MPT tree;
 
-    tree.add_node("abb", 2);
+    tree.update("112", Utils::RLP::Encode(std::string("hello")));
     tree.print_contents();
-    tree.add_node("abbc", 2);
-    tree.print_contents();
-    tree.add_node("abbd", 2);
-    tree.print_contents();
-    tree.add_node("abbcc", 2);
-    tree.print_contents();
-    //tree.add_node("cac", 2);
+    // tree.update("abbc", "2");
+    // tree.print_contents();
+    // tree.update("abbd", "2");
+    // tree.print_contents();
+    // tree.update("abbcc", "2");
+    // tree.print_contents();
+
+    //tree.update("cac", 2);
     //tree.print_contents();
-    // tree.add_node("cb", 2);
+    // tree.update("cb", 2);
     // tree.print_contents();
-    // tree.add_node("caac", 2);
+    // tree.update("caac", 2);
     // tree.print_contents();
-    // tree.add_node("a71135", 45);
-    // tree.add_node("a77d337", 1);
-    // tree.add_node("a7f9365", 1);
-    // tree.add_node("a77d397", 1);
+    // tree.update("a71135", 45);
+    // tree.update("a77d337", 1);
+    // tree.update("a7f9365", 1);
+    // tree.update("a77d397", 1);
 
 
     int a = 42;
