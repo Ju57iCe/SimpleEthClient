@@ -24,8 +24,7 @@ private:
 
     struct Node
     {
-        bool has_branches = false;
-        std::vector<uint8_t> value;
+        std::vector<std::bitset<4>> value;
         std::vector<std::bitset<4>> shared_nibbles;
         std::string hash;
         std::array<std::unique_ptr<Node>, 16> branches;
@@ -34,7 +33,7 @@ public:
     MPT();
     ~MPT();
 
-    void update(std::string key, std::vector<uint8_t> value);
+    void update(const std::string& key, const std::string& value);
     void get_node(std::string key);
     void delete_node(std::string key);
 
@@ -48,7 +47,7 @@ private:
     void recalculate_hashes(MPT::Node* node);
     void print_contents_recursive(MPT::Node* parent, uint32_t branch_level = 0);
     NodeType get_node_type(Node& node) const;
-    std::unique_ptr<MPT::Node> update_internal(Node& node, std::string key, std::vector<uint8_t> value);
+    std::unique_ptr<MPT::Node> update_internal(Node& node, const std::string& key, const std::string& value);
 
     void add_terminator(std::string& key_nibbles) const;
     std::vector<std::bitset<4>> to_nibbles(std::string key) const;
