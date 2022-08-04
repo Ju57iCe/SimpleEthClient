@@ -12,7 +12,7 @@ namespace Utils::RLP
 std::string Encode(std::string str);
 std::string Decode(std::vector<uint8_t>& data);
 
-std::vector<uint8_t> Encode(std::vector<std::string> strings);
+std::string Encode(std::vector<std::string> strings);
 std::vector<std::string> DecodeList(std::vector<uint8_t>& data);
 
 std::vector<uint8_t> Encode(std::any input);

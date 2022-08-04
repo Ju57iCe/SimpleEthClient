@@ -120,10 +120,9 @@ std::string Encode(std::string str)
 {
     std::vector<uint8_t> prefix = generate_string_prefix(str);
 
-
     std::stringstream ss;
     for (uint8_t& c : prefix)
-        ss << std::hex << std::setw(2) << std::setfill('0') << (0xff & (unsigned char)prefix[0]);
+        ss << std::hex << std::setw(2) << std::setfill('0') << (0xff & (unsigned char)c);
 
     std::string result(ss.str());
 
@@ -163,41 +162,41 @@ std::string Decode(std::vector<uint8_t>& data)
     return res;
 }
 
-std::vector<uint8_t> Encode(std::vector<std::string> strings)
+std::string Encode(std::vector<std::string> strings)
 {
-    std::vector<uint8_t> result;
+    std::stringstream ss;
+    std::string result;
 
     if (strings.empty())
     {
-        result.emplace_back(Utils::RLP::SHORT_LIST_PREFIX);
-        return result;
+        ss << std::hex << std::setw(2) << std::setfill('0') << (0xff & (unsigned char)Utils::RLP::SHORT_LIST_PREFIX);
+        return ss.str();
     }
 
     uint32_t total_size = 0;
-    std::vector<std::vector<uint8_t>> strings_data;
+    std::vector<std::string> strings_data;
     for (uint32_t i = 0; i < strings.size(); ++i)
     {
-        //strings_data.emplace_back(Encode(strings[i]));
-        total_size += strings[i].size();
+        strings_data.emplace_back(Encode(strings[i]));
+        total_size += strings_data.back().size();
     }
 
-    if (total_size % 2 == 0)
-        total_size /= 2;
-    else
-        total_size = (total_size + 1) / 2;
+    total_size /= 2;
 
     uint8_t prefix = 0;
     if (total_size <= Utils::RLP::SHORT_LIST_MAX_SIZE)
     {
         prefix = Utils::RLP::SHORT_LIST_PREFIX + total_size;
-        result.emplace_back(prefix);
+        ss << std::hex << std::setw(2) << std::setfill('0') << (0xff & (unsigned char)prefix);
     }
     else
     {
         std::vector<uint8_t> prefix = generate_long_list_prefix(total_size);
-        result.insert(result.end(), prefix.begin(), prefix.end());
+        for (auto& i : prefix)
+            ss << std::hex << std::setw(2) << std::setfill('0') << (0xff & (unsigned char)i);
     }
 
+    result = ss.str();
     for (auto& str_data : strings_data)
         result.insert(result.end(), str_data.begin(), str_data.end());
 
@@ -240,7 +239,7 @@ std::vector<uint8_t> Encode(std::any input)
     if(input.type() == typeid(std::vector<std::string>))
     {
         std::vector<std::string> nested_list = std::any_cast<std::vector<std::string>>(input);
-        result = Encode(nested_list);
+        //result = Encode(nested_list);
     }
     else if (input.type() == typeid(std::string))
     {
