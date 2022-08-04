@@ -4,7 +4,7 @@
 #include <memory>
 #include <vector>
 #include <string>
-#include <array>
+#include <bitset>
 #include <any>
 
 namespace Utils
@@ -12,22 +12,34 @@ namespace Utils
 class MPT
 {
 private:
+    enum class NodeType
+    {
+        EMPTY_NODE,
+        LEAF_NODE,
+        EXTENSION_NODE,
+        BRANCH_NODE
+    };
+
+    static constexpr uint8_t NIBBLE_TERMINATOR = 16;
+
     struct Node
     {
-        uint8_t prefix = 2;
         bool has_branches = false;
         std::vector<uint8_t> value;
-        std::string shared_nibbles;
+        std::vector<std::bitset<4>> shared_nibbles;
         std::string hash;
         std::array<std::unique_ptr<Node>, 16> branches;
     };
 public:
-    void update(std::string key, std::vector<uint8_t> value);
-    void get_node(std::string entry);
-    void delete_node(std::string entry);
+    MPT();
+    ~MPT();
 
-    void generate_proof(std::string entry);
-    void verify_proof(std::string entry);
+    void update(std::string key, std::vector<uint8_t> value);
+    void get_node(std::string key);
+    void delete_node(std::string key);
+
+    void generate_proof(std::string key);
+    void verify_proof(std::string key);
 
     void print_contents();
 private:
@@ -35,13 +47,14 @@ private:
     void transform_leaf_node(MPT::Node* node, uint32_t nibbles_matched);
     void recalculate_hashes(MPT::Node* node);
     void print_contents_recursive(MPT::Node* parent, uint32_t branch_level = 0);
-private:
-    Node m_root;
+    NodeType get_node_type(Node& node) const;
+    std::unique_ptr<MPT::Node> update_internal(Node& node, std::string key, std::vector<uint8_t> value);
 
-    static constexpr uint8_t EXTENSION_NODE_EVEN_PREFIX = 0;
-    static constexpr uint8_t EXTENSION_NODE_ODD_PREFIX = 1;
-    static constexpr uint8_t LEAF_NODE_EVEN_PREFIX = 2;
-    static constexpr uint8_t LEAF_NODE_ODD_PREFIX = 3;
+    void add_terminator(std::string& key_nibbles) const;
+    std::vector<std::bitset<4>> to_nibbles(std::string key) const;
+
+private:
+    std::unique_ptr<Node> m_root;
 };
 
 }

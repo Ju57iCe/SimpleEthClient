@@ -49,7 +49,18 @@ int main(int argc, char *argv[])
 
     Utils::MPT tree;
 
-    tree.update("112", Utils::RLP::Encode(std::string("hello")));
+    std::vector<std::string> list = { "hello" };
+    std::any any_list = list;
+    std::vector<uint8_t> rlp_value = Utils::RLP::Encode(any_list);
+
+    for (uint32_t i = 0; i < rlp_value.size(); ++i)
+    {
+        if (i < 4)
+            std::cout << std::hex << (uint32_t)rlp_value[i];
+    }
+    std::cout << std::dec << std::endl;
+
+    tree.update("112", rlp_value);
     tree.print_contents();
     // tree.update("abbc", "2");
     // tree.print_contents();
