@@ -48,7 +48,6 @@ int main(int argc, char *argv[])
     // const char* buffer = "How are you";
     // std::cout << keccak256(buffer, 11) << std::endl;
 
-    //Utils::MPT tree;
 
     // std::vector<std::string> list = { "hello" };
     // std::any any_list = list;
@@ -68,8 +67,9 @@ int main(int argc, char *argv[])
     // std::cout << bits_first.to_string() << std::endl;
     // std::cout << bits_second.to_string() << std::endl;
 
-    //tree.update("32fa7c", "20"); // keccak of key - 4f6c1c50fde5f5d4f20c2979974a8f465b24e65062f02ef80f722200f35105e2
-    //tree.print_contents();
+    Utils::MPT tree;
+    tree.update("32fa7c", "20"); // keccak of key - 4f6c1c50fde5f5d4f20c2979974a8f465b24e65062f02ef80f722200f35105e2
+    tree.print_contents();
     // tree.update("abbc", "2");
     // tree.print_contents();
     // tree.update("abbd", "2");

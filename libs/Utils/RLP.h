@@ -9,7 +9,7 @@
 namespace Utils::RLP
 {
 
-std::vector<uint8_t> Encode(std::string str);
+std::string Encode(std::string str);
 std::string Decode(std::vector<uint8_t>& data);
 
 std::vector<uint8_t> Encode(std::vector<std::string> strings);

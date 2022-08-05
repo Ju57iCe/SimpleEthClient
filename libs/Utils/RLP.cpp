@@ -3,6 +3,11 @@
 #include "ByteUtils.h"
 #include "RLPConstants.h"
 
+#include <sstream>
+#include <iomanip>
+#include <string>
+#include <iostream>
+
 namespace
 {
 struct item_properties
@@ -30,27 +35,28 @@ std::vector<uint8_t> generate_string_prefix(std::string& str)
 {
     std::vector<uint8_t> prefix_res;
 
+    uint8_t bytes = str.size() / 2;
+
     /// Empty string encoding
-    if (str.size() == 0)
+    if (bytes == 0)
     {
-        uint8_t prefix = Utils::RLP::SHORT_STRING_PREFIX + str.size();
-        prefix_res.emplace_back(prefix);
+        prefix_res.emplace_back(Utils::RLP::SHORT_STRING_PREFIX);
     }
     /// Single byte encoding
-    else if (str.size() == 1 && str[0] < Utils::RLP::SINGLE_BYTE_PREFIX) // ToDo research for single byte values greater that 128
+    else if (str.size() == 1 && str[0] < Utils::RLP::SINGLE_BYTE_PREFIX)
     {
         prefix_res.emplace_back(str[0]);
     }
     /// Short string encoding
-    else if (str.size() <= Utils::RLP::SHORT_STRING_MAX_WIDTH)
+    else if (bytes <= Utils::RLP::SHORT_STRING_MAX_WIDTH)
     {
-        uint8_t prefix = Utils::RLP::SHORT_STRING_PREFIX + str.size();
+        uint8_t prefix = Utils::RLP::SHORT_STRING_PREFIX + bytes;
         prefix_res.emplace_back(prefix);
     }
     /// Long string encoding
     else
     {
-        uint length = str.size();
+        uint length = bytes;
         uint container_bytes = Utils::Byte::BytesToFit(length);
 
         uint8_t prefix = Utils::RLP::LONG_STRING_PREFIX + container_bytes;
@@ -110,12 +116,16 @@ item_properties get_item_size_from_data(std::vector<uint8_t>& data, uint32_t off
 namespace Utils::RLP
 {
 
-std::vector<uint8_t> Encode(std::string str)
+std::string Encode(std::string str)
 {
-    std::vector<uint8_t> result, prefix;
+    std::vector<uint8_t> prefix = generate_string_prefix(str);
 
-    prefix = generate_string_prefix(str);
-    result.insert(result.end(), prefix.begin(), prefix.end());
+
+    std::stringstream ss;
+    for (uint8_t& c : prefix)
+        ss << std::hex << std::setw(2) << std::setfill('0') << (0xff & (unsigned char)prefix[0]);
+
+    std::string result(ss.str());
 
     if (str.size() > 1)
     {
@@ -167,9 +177,14 @@ std::vector<uint8_t> Encode(std::vector<std::string> strings)
     std::vector<std::vector<uint8_t>> strings_data;
     for (uint32_t i = 0; i < strings.size(); ++i)
     {
-        strings_data.emplace_back(Encode(strings[i]));
-        total_size += strings_data[i].size();
+        //strings_data.emplace_back(Encode(strings[i]));
+        total_size += strings[i].size();
     }
+
+    if (total_size % 2 == 0)
+        total_size /= 2;
+    else
+        total_size = (total_size + 1) / 2;
 
     uint8_t prefix = 0;
     if (total_size <= Utils::RLP::SHORT_LIST_MAX_SIZE)
@@ -230,7 +245,7 @@ std::vector<uint8_t> Encode(std::any input)
     else if (input.type() == typeid(std::string))
     {
         std::string str = std::any_cast<std::string>(input);
-        result = Encode(str);
+        // result = Encode(str);
     }
     else if (input.type() == typeid(std::vector<std::any>))
     {
@@ -246,6 +261,7 @@ std::vector<uint8_t> Encode(std::any input)
             list_total_size += list_item_data.size();
         }
 
+        list_total_size /= 2;
         if (list_total_size == 0)
         {
             result.emplace_back(Utils::RLP::SHORT_LIST_PREFIX);

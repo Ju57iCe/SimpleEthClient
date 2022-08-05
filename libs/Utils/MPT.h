@@ -24,8 +24,8 @@ private:
 
     struct Node
     {
-        std::vector<std::bitset<4>> value;
-        std::vector<std::bitset<4>> shared_nibbles;
+        std::vector<uint8_t> value;
+        std::vector<uint8_t> nibbles;
         std::string hash;
         std::array<std::unique_ptr<Node>, 16> branches;
     };
@@ -49,8 +49,8 @@ private:
     NodeType get_node_type(Node& node) const;
     std::unique_ptr<MPT::Node> update_internal(Node& node, const std::string& key, const std::string& value);
 
-    void add_terminator(std::string& key_nibbles) const;
-    std::vector<std::bitset<4>> to_nibbles(std::string key) const;
+    void add_prefix(std::vector<uint8_t>& nibbles) const;
+    std::vector<uint8_t> to_nibbles(const std::string& key) const;
 
 private:
     std::unique_ptr<Node> m_root;
