@@ -1,8 +1,3 @@
-cmake_minimum_required(VERSION 3.8)
-
-project(SimpleEthClient)
-
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(IGNORE_CODE_STYLE_CHECKS OFF)
 set(CMAKE_BUILD_TYPE Debug)
 
@@ -23,6 +18,11 @@ endif()
 
 target_include_directories(${PROJECT_NAME} PUBLIC ${BOOST_INCLUDE_DIRS})
 target_include_directories(${PROJECT_NAME} PUBLIC ${ROOT_DIR}/libs)
+target_include_directories(${PROJECT_NAME} PUBLIC ${WORKSPACE_ROOT_DIR}/deps/lib-p2p-cpp/include)
+target_include_directories(${PROJECT_NAME} PUBLIC ${WORKSPACE_ROOT_DIR}/deps/GSL-2.0.0/include)
+target_include_directories(${PROJECT_NAME} PUBLIC ${WORKSPACE_ROOT_DIR}/deps/di-1.1.0/include)
+target_include_directories(${PROJECT_NAME} PUBLIC ${WORKSPACE_ROOT_DIR}/deps/soralog-0.0.9/include)
+target_include_directories(${PROJECT_NAME} PUBLIC ${WORKSPACE_ROOT_DIR}/deps/yaml-cpp-yaml-cpp-0.6.2/include)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
     utils

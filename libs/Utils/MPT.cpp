@@ -4,6 +4,8 @@
 #include "Hex.h"
 #include <hash-library/keccak.h>
 
+//#include "Solidity/Keccak256.h"
+
 #include <iostream>
 
 namespace
@@ -21,6 +23,11 @@ int ASCIIHexToInt[] =
     -1, 10, 11, 12, 13, 14, 15, -1, -1, -1, -1, -1, -1, -1, -1, -1,
     -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
 };
+
+int HexToByte(const char& nibble_one, const char& nibble_two)
+{
+    return nibble_one * 16 + nibble_two;
+}
 
 }
 namespace Utils
@@ -142,56 +149,71 @@ std::unique_ptr<MPT::Node> MPT::update_internal(Node& node, const std::string& k
 
     Keccak keccak256;
     std::string key_hash = keccak256(key);
+    keccak256.reset();
 
     if (type == NodeType::EMPTY_NODE)
     {
         std::unique_ptr<Node> new_node(new Node);
 
-        std::vector<uint8_t> nibbles = to_nibbles(key_hash);
-        add_prefix(nibbles);
+        // std::vector<uint8_t> nibbles = to_nibbles(key_hash);
+        // new_node->nibbles = nibbles;
+        // new_node->value = std::vector<uint8_t>(value.begin(), value.end());
 
-        new_node->nibbles = nibbles;
-        new_node->value = std::vector<uint8_t>(value.begin(), value.end());
+        // if (key_hash.size() % 2 == 0)
+        // {
+        //     key_hash.insert(0, std::string("2"));
+        //     key_hash.insert(1, std::string("0"));
+        // }
 
-        if (key_hash.size() % 2 == 0)
-        {
-            key_hash.insert(0, std::string("2"));
-            key_hash.insert(1, std::string("0"));
-        }
+        // std::string key_rlp = Utils::RLP::Encode(key_hash);
+        // std::string value_as_hex = Utils::Hex::ASCIIStringToHexString(value);
 
-        //key_hash.insert(0, std::string(std::to_string(128+key_hash.size())));
-        std::string key_rlp = Utils::RLP::Encode(key_hash);
+        // std::vector<std::string> list = { key_hash, value_as_hex};
+        // std::string list_rlp = Utils::RLP::Encode(list);
+        // std::cout << list_rlp << std::endl;
 
-        std::string value_as_hex = Utils::Hex::ASCIIStringToHexString(value);
-        std::string value_rlp = Utils::RLP::Encode(value_as_hex);
+        // std::string final_hash = keccak256(Utils::Hex::ASCIIStringToHexString(list_rlp));
+        // keccak256.reset();
+        // std::cout << final_hash << std::endl;
 
+        // std::vector<uint8_t> hex_str;
+        // for (char& c : final_hash)
+        // {   
+        //     uint8_t nibble = ASCIIHexToInt[c];
+        //     std::cout << c << " " <<  (uint32_t)nibble << std::endl;
+        //     hex_str.emplace_back(nibble);
+        // }
 
-        // value_as_hex.insert(0, std::string("8"));
-        // value_as_hex.insert(1, std::string("2"));
-        //auto value_rlp = Utils::RLP::Encode(value_as_hex);
+        // std::cout << "=========================" << std::endl;
 
-        //std::vector<std::string> list = { key_hash, std::string(value_rlp.begin(), value_rlp.end()) };
-        //std::vector<uint8_t> node_hash = Utils::RLP::Encode(list);
-        std::cout << key_hash.size() << std::endl;
-        std::cout << value_as_hex.size() << std::endl;
+        // std::vector<uint8_t> bytes;
+        // for (uint32_t i = 0; i < hex_str.size(); i = i + 2)
+        // {
+        //     uint8_t byte = HexToByte(hex_str[i], hex_str[i+1]);
 
+        //     // byte = (byte & 0xF0) | (hex_str[i] & 0xF); // write low quartet
+        //     // byte = (byte & 0x0F) | ((hex_str[i+1] & 0xF) << 4); // write high quartetbyte
+            
+        //     bytes.emplace_back(byte);
+        //     std::cout << "Nibbles " << (uint32_t)hex_str[i] << " " <<  (uint32_t)hex_str[i+1] << " = " << (uint32_t)byte << std::endl;
+        // }
 
+        // std::string final_hex_hash = keccak256(&bytes, bytes.size());
+        // keccak256.reset();
+        // std::cout << final_hex_hash << std::endl;
 
-        auto total_size = (key_hash.size() + value_as_hex.size()) / 2 + 2; // 2 for prefixes
+        // new_node->hash = final_hash;
 
-        std::vector<uint8_t> final_rlp;
-        final_rlp.insert(final_rlp.end(), 192 + total_size);
-        final_rlp.insert(final_rlp.end(), key_rlp.begin(), key_rlp.end());
-        final_rlp.insert(final_rlp.end(), value_rlp.begin(), value_rlp.end());
+        // Keccak k2;
+        // std::vector<uint32_t> test = {0x0};
+        // std::string test_hex_hash = k2(&test, test.size());
+        // std::cout << test_hex_hash << std::endl;
 
-        std::string final_str(final_rlp.begin(), final_rlp.end());
-        std::cout << final_str << std::endl;
-        std::string final_hash = keccak256(final_str);
-        std::cout << final_hash << std::endl;
-
-        // for (auto& i : node_hash)
-
-        // std::cout << std::endl << std::flush;
+        // Keccak k3;
+        // std::string test_hex_hash = k3("0x0");
+        // std::cout << test_hex_hash << std::endl;
+        
+        //auto solidity::util:keccak256({0})
 
         return new_node;
     }
