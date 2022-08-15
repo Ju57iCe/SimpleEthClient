@@ -4,6 +4,7 @@ project(SimpleEthClient)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(WORKSPACE_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+set(USE_Z3 OFF)
 
 add_subdirectory(${WORKSPACE_ROOT_DIR}/deps/googletest-1.8.0-hunter-p11)
 add_subdirectory(${WORKSPACE_ROOT_DIR}/deps/fmt-6.1.2)

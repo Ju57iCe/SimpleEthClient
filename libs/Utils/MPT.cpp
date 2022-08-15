@@ -4,7 +4,7 @@
 #include "Hex.h"
 #include <hash-library/keccak.h>
 
-//#include "Solidity/Keccak256.h"
+#include "libsolutil/Keccak256.h"
 
 #include <iostream>
 
@@ -205,6 +205,9 @@ std::unique_ptr<MPT::Node> MPT::update_internal(Node& node, const std::string& k
         // new_node->hash = final_hash;
 
         // Keccak k2;
+
+        solidity::util::h256 res = solidity::util::keccak256(key);
+        std::cout << res << std::endl;
         // std::vector<uint32_t> test = {0x0};
         // std::string test_hex_hash = k2(&test, test.size());
         // std::cout << test_hex_hash << std::endl;

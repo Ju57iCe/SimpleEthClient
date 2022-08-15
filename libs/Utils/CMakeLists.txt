@@ -26,5 +26,12 @@ set_target_properties(${LIB_NAME} PROPERTIES
     DEBUG_POSTFIX ""
 )
 
-target_include_directories(${LIB_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/..)
-target_link_libraries(${LIB_NAME} PRIVATE hash_library)
+target_include_directories(${LIB_NAME} PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}/..
+    ${WORKSPACE_ROOT_DIR}/deps/solidity-0.8.15/
+)
+
+target_link_libraries(${LIB_NAME} PRIVATE
+    hash_library
+    solutil
+    )

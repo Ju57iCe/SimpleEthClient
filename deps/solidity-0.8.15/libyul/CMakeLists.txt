@@ -10,8 +10,8 @@ foreach(polyfill IN LISTS POLYFILLS)
 	string(REGEX REPLACE ";" ",\n\t0x" EWASM_POLYFILL_CONTENT "${EWASM_POLYFILL_CONTENT}")
 	set(EWASM_POLYFILL_CONTENT "0x${EWASM_POLYFILL_CONTENT}")
 	set(EWASM_POLYFILL_NAME ${polyfill})
-	configure_file("${CMAKE_SOURCE_DIR}/deps/solidity-0.8.15/cmake/templates/ewasm_polyfill.in" ${CMAKE_BINARY_DIR}/include/ewasmPolyfills/${polyfill}.h @ONLY)
-	list(APPEND GENERATED_POLYFILL_HEADERS ${CMAKE_BINARY_DIR}/include/ewasmPolyfills/${polyfill}.h)
+	configure_file("${CMAKE_SOURCE_DIR}/deps/solidity-0.8.15/cmake/templates/ewasm_polyfill.in" ${WORKSPACE_ROOT_DIR}/build/deps/solidity-0.8.15/include/ewasmPolyfills/${polyfill}.h @ONLY)
+	list(APPEND GENERATED_POLYFILL_HEADERS ${WORKSPACE_ROOT_DIR}/build/deps/solidity-0.8.15/include/ewasmPolyfills/${polyfill}.h)
 endforeach()
 
 add_library(yul
