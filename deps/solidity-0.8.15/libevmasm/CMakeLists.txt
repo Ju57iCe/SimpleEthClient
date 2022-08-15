@@ -41,3 +41,5 @@ set(sources
 
 add_library(evmasm ${sources})
 target_link_libraries(evmasm PUBLIC solutil fmt::fmt-header-only)
+
+target_compile_options(evmasm PUBLIC ${COMPILE_OPTIONS} -Wno-sign-conversion)

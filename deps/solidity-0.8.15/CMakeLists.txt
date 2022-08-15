@@ -45,6 +45,7 @@ include(EthDependencies)
 include(jsoncpp)
 include(range-v3)
 include_directories(SYSTEM ${JSONCPP_INCLUDE_DIR})
+include_directories(${CMAKE_SOURCE_DIR}/deps/solidity-0.8.15/)
 
 find_package(Threads)
 
@@ -56,12 +57,12 @@ include(EthUtils)
 
 # Create license.h from LICENSE.txt and template
 # Converting to char array is required due to MSVC's string size limit.
-file(READ ${CMAKE_SOURCE_DIR}/example/SimpleEthClient/libs/solidity-0.8.15/LICENSE.txt LICENSE_TEXT HEX)
+file(READ ${CMAKE_SOURCE_DIR}/deps/solidity-0.8.15/LICENSE.txt LICENSE_TEXT HEX)
 string(REGEX MATCHALL ".." LICENSE_TEXT "${LICENSE_TEXT}")
 string(REGEX REPLACE ";" ",\n\t0x" LICENSE_TEXT "${LICENSE_TEXT}")
 set(LICENSE_TEXT "0x${LICENSE_TEXT}")
 
-configure_file("${CMAKE_SOURCE_DIR}/example/SimpleEthClient/libs/solidity-0.8.15/cmake/templates/license.h.in" include/license.h)
+configure_file("${CMAKE_SOURCE_DIR}/deps/solidity-0.8.15/cmake/templates/license.h.in" include/license.h)
 
 include(EthOptions)
 configure_project(TESTS)

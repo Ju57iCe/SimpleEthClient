@@ -14,7 +14,7 @@ add_subdirectory(${WORKSPACE_ROOT_DIR}/deps/soralog-0.0.9)
 add_subdirectory(${WORKSPACE_ROOT_DIR}/deps/hat-trie-0.6.0)
 add_subdirectory(${WORKSPACE_ROOT_DIR}/deps/di-1.1.0)
 add_subdirectory(${WORKSPACE_ROOT_DIR}/deps/lib-p2p-cpp)
-#add_subdirectory(${WORKSPACE_ROOT_DIR}/deps/solidity-0.8.15)
+add_subdirectory(${WORKSPACE_ROOT_DIR}/deps/solidity-0.8.15)
 
 add_subdirectory(libs/Utils)
 add_subdirectory(libs/hash-library)
