@@ -34,5 +34,5 @@ std::tuple<std::string, std::string> GenerateKey()
 
     EVP_PKEY_CTX_free(pctx);
 
-    return std::tuple(private_key_txt, public_key_txt);
+    return std::tuple<std::string, std::string>(private_key_txt, public_key_txt);
 }

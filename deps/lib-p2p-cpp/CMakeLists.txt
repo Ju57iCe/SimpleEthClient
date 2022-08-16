@@ -100,13 +100,19 @@ include_directories(
     SYSTEM
     # project includes
     ${PROJECT_SOURCE_DIR}/include
+    ${WORKSPACE_ROOT_DIR}/build/deps/lib-p2p-cpp/pb/p2p_gossip_proto
     ${WORKSPACE_ROOT_DIR}/build/deps/lib-p2p-cpp/pb/p2p_gossip_proto/generated
+    ${WORKSPACE_ROOT_DIR}/build/deps/lib-p2p-cpp/pb/p2p_identify_proto
     ${WORKSPACE_ROOT_DIR}/build/deps/lib-p2p-cpp/pb/p2p_identify_proto/generated
+    ${WORKSPACE_ROOT_DIR}/build/deps/lib-p2p-cpp/pb/p2p_kademlia_proto
     ${WORKSPACE_ROOT_DIR}/build/deps/lib-p2p-cpp/pb/p2p_kademlia_proto/generated
+    ${WORKSPACE_ROOT_DIR}/build/deps/lib-p2p-cpp/pb/p2p_keys_proto
     ${WORKSPACE_ROOT_DIR}/build/deps/lib-p2p-cpp/pb/p2p_keys_proto/generated
+    ${WORKSPACE_ROOT_DIR}/build/deps/lib-p2p-cpp/pb/p2p_noise_proto
     ${WORKSPACE_ROOT_DIR}/build/deps/lib-p2p-cpp/pb/p2p_noise_proto/generated
     ${WORKSPACE_ROOT_DIR}/build/deps/lib-p2p-cpp/pb/p2p_plaintext_proto
     ${WORKSPACE_ROOT_DIR}/build/deps/lib-p2p-cpp/pb/p2p_plaintext_proto/generated
+    ${WORKSPACE_ROOT_DIR}/build/deps/lib-p2p-cpp/pb/p2p_secio_proto
     ${WORKSPACE_ROOT_DIR}/build/deps/lib-p2p-cpp/pb/p2p_secio_proto/generated
 )
 

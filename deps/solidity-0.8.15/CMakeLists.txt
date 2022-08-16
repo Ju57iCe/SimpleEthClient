@@ -1,6 +1,10 @@
 cmake_minimum_required(VERSION 3.13.0)
 
-set(ETH_CMAKE_DIR   "${CMAKE_CURRENT_LIST_DIR}/cmake"   CACHE PATH "The the path to the cmake directory")
+
+set(ETH_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/deps/solidity-0.8.15)
+set(ETH_CMAKE_DIR "${WORKSPACE_ROOT_DIR}/deps/solidity-0.8.15/cmake/" CACHE PATH "The the path to the cmake directory")
+set(ETH_SCRIPTS_DIR ${CMAKE_CURRENT_SOURCE_DIR}/deps/solidity-0.8.15/cmake/scripts)
+
 list(APPEND CMAKE_MODULE_PATH ${ETH_CMAKE_DIR})
 
 # Set the build type, if none was specified.
@@ -45,7 +49,8 @@ include(EthDependencies)
 include(jsoncpp)
 include(range-v3)
 include_directories(SYSTEM ${JSONCPP_INCLUDE_DIR})
-include_directories(${CMAKE_SOURCE_DIR}/deps/solidity-0.8.15/)
+include_directories(${WORKSPACE_ROOT_DIR}/deps/solidity-0.8.15/)
+include_directories(${WORKSPACE_ROOT_DIR}/deps/fmt-6.1.2/include)
 
 find_package(Threads)
 
