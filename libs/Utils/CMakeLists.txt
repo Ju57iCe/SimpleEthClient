@@ -13,7 +13,7 @@ add_library(${LIB_NAME} ${SOURCES})
 if(NOT ${IGNORE_CODE_STYLE_CHECKS})
     set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/../../cmake)
     include(CodeStyle)
-    set_code_style(${LIB_NAME} lower_case ignore_headers "${extra_flags}")
+    set_code_style(${LIB_NAME} lower_case "ignore_headers" "${extra_flags}")
 endif()
 
 # Add definitions
@@ -32,6 +32,5 @@ target_include_directories(${LIB_NAME} PUBLIC
 )
 
 target_link_libraries(${LIB_NAME} PRIVATE
-    hash_library
     solutil
     )

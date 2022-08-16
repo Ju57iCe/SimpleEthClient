@@ -18,6 +18,5 @@ add_subdirectory(${WORKSPACE_ROOT_DIR}/deps/lib-p2p-cpp)
 add_subdirectory(${WORKSPACE_ROOT_DIR}/deps/solidity-0.8.15)
 
 add_subdirectory(libs/Utils)
-add_subdirectory(libs/hash-library)
 add_subdirectory(tests)
 add_subdirectory(src)

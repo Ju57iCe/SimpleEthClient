@@ -2,7 +2,6 @@
 
 #include "RLP.h"
 #include "Hex.h"
-#include <hash-library/keccak.h>
 
 #include "libsolutil/Keccak256.h"
 
@@ -147,9 +146,7 @@ std::unique_ptr<MPT::Node> MPT::update_internal(Node& node, const std::string& k
 {
     auto type = get_node_type(node);
 
-    Keccak keccak256;
-    std::string key_hash = keccak256(key);
-    keccak256.reset();
+    solidity::util::h256 key_hash = solidity::util::keccak256(key);
 
     if (type == NodeType::EMPTY_NODE)
     {
@@ -178,7 +175,7 @@ std::unique_ptr<MPT::Node> MPT::update_internal(Node& node, const std::string& k
 
         // std::vector<uint8_t> hex_str;
         // for (char& c : final_hash)
-        // {   
+        // {
         //     uint8_t nibble = ASCIIHexToInt[c];
         //     std::cout << c << " " <<  (uint32_t)nibble << std::endl;
         //     hex_str.emplace_back(nibble);
@@ -193,7 +190,7 @@ std::unique_ptr<MPT::Node> MPT::update_internal(Node& node, const std::string& k
 
         //     // byte = (byte & 0xF0) | (hex_str[i] & 0xF); // write low quartet
         //     // byte = (byte & 0x0F) | ((hex_str[i+1] & 0xF) << 4); // write high quartetbyte
-            
+
         //     bytes.emplace_back(byte);
         //     std::cout << "Nibbles " << (uint32_t)hex_str[i] << " " <<  (uint32_t)hex_str[i+1] << " = " << (uint32_t)byte << std::endl;
         // }
@@ -215,7 +212,7 @@ std::unique_ptr<MPT::Node> MPT::update_internal(Node& node, const std::string& k
         // Keccak k3;
         // std::string test_hex_hash = k3("0x0");
         // std::cout << test_hex_hash << std::endl;
-        
+
         //auto solidity::util:keccak256({0})
 
         return new_node;

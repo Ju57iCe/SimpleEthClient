@@ -26,7 +26,6 @@ target_include_directories(${PROJECT_NAME} PUBLIC ${WORKSPACE_ROOT_DIR}/deps/yam
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
     utils
-    hash_library
     p2p_basic_host
     p2p_default_network
     p2p_peer_repository
@@ -38,4 +37,13 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     asio_scheduler
     p2p_multiaddress
     Boost::program_options
+)
+
+set_target_properties(${PROJECT_NAME} PROPERTIES
+    CXX_STANDARD 17
+    CXX_STANDARD_REQUIRED YES
+    CXX_EXTENSIONS NO
+    POSITION_INDEPENDENT_CODE ON
+    WINDOWS_EXPORT_ALL_SYMBOLS ON
+    DEBUG_POSTFIX ""
 )

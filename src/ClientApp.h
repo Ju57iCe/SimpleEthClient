@@ -28,27 +28,27 @@ public:
     void run();
 private:
 
-    std::shared_ptr<soralog::LoggingSystem> InitLogging();
-    void ConfigureLogging(std::shared_ptr<soralog::LoggingSystem>& logging_system);
-    void ReadFromConsole(boost::asio::posix::stream_descriptor& in,
+    std::shared_ptr<soralog::LoggingSystem> init_logging();
+    void configure_logging(std::shared_ptr<soralog::LoggingSystem>& logging_system);
+    void read_from_console(boost::asio::posix::stream_descriptor& in,
                             std::array<uint8_t, 1 << 12>& buffer);
 
-    static void HandleOutgoingStream(
+    static void handle_outgoing_stream(
         libp2p::protocol::BaseProtocol::StreamResult stream_res);
-    static void HandleIncomingStream(
+    static void handle_incomming_stream(
         libp2p::protocol::BaseProtocol::StreamResult stream_res);
     std::vector<libp2p::peer::PeerInfo> BootstrapNodesFn();
 
-    static auto& GetKademliaConfig();
-    static auto& GetKademlia();
-    static auto& GetInjector();
-    static auto& GetScheduler();
-    static auto& GetSelfId();
-    static auto& GetSessions();
-    static auto& GetHost();
+    static auto& get_kademlia_config();
+    static auto& get_kademlia();
+    static auto& get_injector();
+    static auto& get_scheduler();
+    static auto& get_self_id();
+    static auto& get_sessions();
+    static auto& get_host();
 
-    static void FindProviders();
-    static void Provide();
+    static void find_providers();
+    static void provide();
 private:
     //===================== GLOBALS ======================================
     std::shared_ptr<libp2p::protocol::kademlia::Kademlia> kademlia;

@@ -3,8 +3,6 @@
 #include <bitset>
 #include <boost/program_options.hpp>
 
-#include <hash-library/keccak.h>
-
 #include <Utils/MPT.h>
 #include <Utils/RLP.h>
 

@@ -12,7 +12,7 @@ ClientApp::~ClientApp()
 {
 }
 
-auto& ClientApp::GetKademliaConfig()
+auto& ClientApp::get_kademlia_config()
 {
     static libp2p::protocol::kademlia::Config kademlia_config;
     kademlia_config.randomWalk.enabled = true;
@@ -21,48 +21,48 @@ auto& ClientApp::GetKademliaConfig()
     return kademlia_config;
 }
 
-auto& ClientApp::GetInjector()
+auto& ClientApp::get_injector()
 {
     static auto injector = libp2p::injector::makeHostInjector(
       libp2p::injector::makeKademliaInjector(
-          libp2p::injector::useKademliaConfig(GetKademliaConfig())));
+          libp2p::injector::useKademliaConfig(get_kademlia_config())));
     return injector;
 }
 
-auto& ClientApp::GetKademlia()
+auto& ClientApp::get_kademlia()
 {
     static auto kademlia =
-        GetInjector()
+        get_injector()
             .create<std::shared_ptr<libp2p::protocol::kademlia::Kademlia>>();
-    
+
     return kademlia;
 }
 
-auto& ClientApp::GetScheduler()
+auto& ClientApp::get_scheduler()
 {
-    static auto& scheduler = GetInjector().create<libp2p::protocol::Scheduler &>();
+    static auto& scheduler = get_injector().create<libp2p::protocol::Scheduler &>();
     return scheduler;
 }
 
-auto& ClientApp::GetSelfId()
+auto& ClientApp::get_self_id()
 {
     static boost::optional<libp2p::peer::PeerId> self_id;
     return self_id;
 }
 
-auto& ClientApp::GetSessions()
+auto& ClientApp::get_sessions()
 {
     static std::set<std::shared_ptr<Session>, Cmp> sessions;
     return sessions;
 }
 
-auto& ClientApp::GetHost()
+auto& ClientApp::get_host()
 {
-    static auto host = GetInjector().create<std::shared_ptr<libp2p::Host>>();
+    static auto host = get_injector().create<std::shared_ptr<libp2p::Host>>();
     return host;
 }
 
-std::shared_ptr<soralog::LoggingSystem> ClientApp::InitLogging()
+std::shared_ptr<soralog::LoggingSystem> ClientApp::init_logging()
 {
     return std::make_shared<soralog::LoggingSystem>(
         std::make_shared<soralog::ConfiguratorFromYAML>(
@@ -72,7 +72,7 @@ std::shared_ptr<soralog::LoggingSystem> ClientApp::InitLogging()
             config::logger_config));
 }
 
-void ClientApp::ConfigureLogging(std::shared_ptr<soralog::LoggingSystem>& logging_system)
+void ClientApp::configure_logging(std::shared_ptr<soralog::LoggingSystem>& logging_system)
 {
     auto r = logging_system->configure();
     if (not r.message.empty()) {
@@ -90,16 +90,16 @@ void ClientApp::ConfigureLogging(std::shared_ptr<soralog::LoggingSystem>& loggin
     }
 }
 
-void ClientApp::FindProviders()
+void ClientApp::find_providers()
 {
-    [[maybe_unused]] auto res1 = GetKademlia()->findProviders(
+    [[maybe_unused]] auto res1 = get_kademlia()->findProviders(
         content_id, 0,
         [&](libp2p::outcome::result<std::vector<libp2p::peer::PeerInfo>>
                 res) {
-            GetScheduler()
+            get_scheduler()
                 .schedule(libp2p::protocol::scheduler::toTicks(
-                            GetKademliaConfig().randomWalk.interval),
-                        FindProviders)
+                            get_kademlia_config().randomWalk.interval),
+                        find_providers)
                 .detach();
 
             if (not res) {
@@ -110,26 +110,26 @@ void ClientApp::FindProviders()
 
             auto &providers = res.value();
             for (auto &provider : providers) {
-                GetHost()->newStream(provider, "/chat/1.1.0", ClientApp::HandleOutgoingStream);
+                get_host()->newStream(provider, "/chat/1.1.0", ClientApp::handle_outgoing_stream);
             }
         });
 };
 
-void ClientApp::Provide()
+void ClientApp::provide()
 {
     [[maybe_unused]] auto res =
-        GetKademlia()->provide(content_id, not GetKademliaConfig().passiveMode);
+        get_kademlia()->provide(content_id, not get_kademlia_config().passiveMode);
 
-    auto& scheduler = GetScheduler();
+    auto& scheduler = get_scheduler();
     scheduler.schedule(libp2p::protocol::scheduler::toTicks(
-                        GetKademliaConfig().randomWalk.interval),
-                    Provide)
+                        get_kademlia_config().randomWalk.interval),
+                    provide)
         .detach();
 };
 
 // Asynchronous transmit data from standard input to peers, that's privided
 // same content id
-void ClientApp::ReadFromConsole(boost::asio::posix::stream_descriptor& in,
+void ClientApp::read_from_console(boost::asio::posix::stream_descriptor& in,
                         std::array<uint8_t, 1 << 12>& buffer)
 {
     in.async_read_some(boost::asio::buffer(buffer), [&](auto ec, auto size) {
@@ -140,11 +140,11 @@ void ClientApp::ReadFromConsole(boost::asio::posix::stream_descriptor& in,
         auto out = std::make_shared<std::vector<uint8_t>>();
         out->assign(buffer.begin(), buffer.begin() + size);
 
-        for (const auto &session : GetSessions()) {
-            session->write(out, GetSessions());
+        for (const auto &session : get_sessions()) {
+            session->write(out, get_sessions());
         }
         }
-        ReadFromConsole(in, buffer);
+        read_from_console(in, buffer);
     });
 }
 
@@ -177,8 +177,8 @@ std::vector<libp2p::peer::PeerInfo> ClientApp::BootstrapNodesFn()
 void ClientApp::run()
 {
     // prepare log system
-    auto logging_system = InitLogging();
-    ConfigureLogging(logging_system);
+    auto logging_system = init_logging();
+    configure_logging(logging_system);
 
     // resulting PeerId should be
     // 12D3KooWEgUjBV5FJAuBSoNMRYFRHjV7PjZwRQ7b43EKX9g7D6xV
@@ -195,7 +195,7 @@ void ClientApp::run()
         // clang-format on
     };
 
-    auto& injector = GetInjector();
+    auto& injector = get_injector();
 
     try {
         auto bootstrap_nodes = BootstrapNodesFn();
@@ -206,7 +206,7 @@ void ClientApp::run()
 
         host = injector.create<std::shared_ptr<libp2p::Host>>();
 
-        auto& self_id = GetSelfId();
+        auto& self_id = get_self_id();
         self_id = host->getId();
 
         std::cerr << self_id->toBase58() << " * started" << std::endl;
@@ -216,8 +216,8 @@ void ClientApp::run()
         kademlia = injector.create<std::shared_ptr<libp2p::protocol::kademlia::Kademlia>>();
 
         // Handle streams for observed protocol
-        host->setProtocolHandler("/chat/1.0.0", this->HandleIncomingStream);
-        host->setProtocolHandler("/chat/1.1.0", this->HandleIncomingStream);
+        host->setProtocolHandler("/chat/1.0.0", this->handle_incomming_stream);
+        host->setProtocolHandler("/chat/1.1.0", this->handle_incomming_stream);
 
         io->post([&] {
         auto listen = host->listen(ma);
@@ -240,10 +240,10 @@ void ClientApp::run()
 
         [[maybe_unused]] auto res = kademlia->findPeer(peer_id, [&](auto) {
             // Say to world about his providing
-            Provide();
+            provide();
 
             // Ask provider from world
-            FindProviders();
+            find_providers();
 
             kademlia->start();
         });
@@ -252,7 +252,7 @@ void ClientApp::run()
         boost::asio::posix::stream_descriptor in(*io, ::dup(STDIN_FILENO));
         std::array<uint8_t, 1 << 12> buffer{};
 
-        ReadFromConsole(in, buffer);
+        read_from_console(in, buffer);
 
         boost::asio::signal_set signals(*io, SIGINT, SIGTERM);
         signals.async_wait(
@@ -268,7 +268,7 @@ void ClientApp::run()
     exit(EXIT_SUCCESS);
 }
 
-void ClientApp::HandleOutgoingStream(
+void ClientApp::handle_outgoing_stream(
     libp2p::protocol::BaseProtocol::StreamResult stream_res) {
   if (not stream_res) {
     std::cerr << " ! outgoing connection failed: "
@@ -278,7 +278,7 @@ void ClientApp::HandleOutgoingStream(
   auto &stream = stream_res.value();
 
   // reject outgoing stream to themselves
-  if (stream->remotePeerId().value() == GetSelfId()) {
+  if (stream->remotePeerId().value() == get_self_id()) {
     stream->reset();
     return;
   }
@@ -289,12 +289,12 @@ void ClientApp::HandleOutgoingStream(
             << std::endl;
 
   auto session = std::make_shared<Session>(stream);
-  if (auto [it, ok] = GetSessions().emplace(std::move(session)); ok) {
-    (*it)->read(GetSessions());
+  if (auto [it, ok] = get_sessions().emplace(std::move(session)); ok) {
+    (*it)->read(get_sessions());
   }
 }
 
-void ClientApp::HandleIncomingStream(
+void ClientApp::handle_incomming_stream(
     libp2p::protocol::BaseProtocol::StreamResult stream_res) {
   if (not stream_res) {
     std::cerr << " ! incoming connection failed: "
@@ -304,7 +304,7 @@ void ClientApp::HandleIncomingStream(
   auto &stream = stream_res.value();
 
   // reject incoming stream with themselves
-  if (stream->remotePeerId().value() == GetSelfId()) {
+  if (stream->remotePeerId().value() == get_self_id()) {
     stream->reset();
     return;
   }
@@ -315,7 +315,7 @@ void ClientApp::HandleIncomingStream(
             << std::endl;
 
   auto session = std::make_shared<Session>(stream);
-  if (auto [it, ok] = GetSessions().emplace(std::move(session)); ok) {
-    (*it)->read(GetSessions());
+  if (auto [it, ok] = get_sessions().emplace(std::move(session)); ok) {
+    (*it)->read(get_sessions());
   }
 }
