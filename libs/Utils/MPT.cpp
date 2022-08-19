@@ -108,38 +108,58 @@ void MPT::update(const std::string& key, const std::string& value)
     // }
 }
 
-void MPT::add_prefix(std::vector<uint8_t>& nibbles) const
+void MPT::add_prefix(std::string& key_hash, NodeType type) const
 {
-    if (nibbles.size() % 2 == 0)
+    if (type == NodeType::EMPTY_NODE && key_hash.size() % 2 == 0)
     {
-        std::vector<uint8_t> res;
-        res.push_back(2);
-        res.push_back(0);
-        res.insert(res.end(), nibbles.begin(), nibbles.end());
-
-        nibbles = res;
+        key_hash.insert(0, std::string("2"));
+        key_hash.insert(1, std::string("0"));
     }
 }
 
-std::vector<uint8_t> MPT::to_nibbles(const std::string& key) const
+std::string MPT::hash_string(const std::string& str)
 {
-    std::vector<uint8_t> res;
-    for (char c : key)
-        res.emplace_back(Utils::Hex::ASCIIHexToInt[(uint8_t)c]);
+    solidity::util::h256 str_hash = solidity::util::keccak256(str);
+    std::stringstream ss;
+    ss << str_hash;
 
-    return res;
+    return ss.str();
+}
+
+std::string MPT::hash_data(const std::vector<uint8_t>& data)
+{
+    solidity::util::h256 data_hash = solidity::util::keccak256(data);
+    std::stringstream ss;
+    ss << data_hash;
+
+    return ss.str();
+}
+// std::vector<uint8_t> MPT::to_nibbles(const std::string& key) const
+// {
+//     std::vector<uint8_t> res;
+//     for (char c : key)
+//         res.emplace_back(Utils::Hex::ASCIIHexToInt[(uint8_t)c]);
+
+//     return res;
+// }
+
+std::string MPT::calculate_node_hash(NodeType type, const std::string& key, const std::string& value)
+{
+    std::string key_hash = hash_string(key);
+    add_prefix(key_hash, type);
+
+    std::string key_rlp = Utils::RLP::Encode(key_hash);
+    std::string value_as_hex = Utils::Hex::ASCIIStringToHexString(value);
+
+    std::string list_rlp = Utils::RLP::Encode({ key_hash, value_as_hex});
+
+    std::string root_hash = hash_data(std::move(Utils::Hex::string_to_hex_vector(list_rlp)));
+    return root_hash;
 }
 
 std::unique_ptr<MPT::Node> MPT::update_internal(Node& node, const std::string& key, const std::string& value)
 {
     auto type = get_node_type(node);
-
-    solidity::util::h256 key_hash = solidity::util::keccak256(key);
-    std::stringstream ss;
-    ss << key_hash;
-
-    std::string key_hash_str(ss.str());
-    std::cout << key_hash_str << std::endl;
 
     if (type == NodeType::EMPTY_NODE)
     {
@@ -149,25 +169,9 @@ std::unique_ptr<MPT::Node> MPT::update_internal(Node& node, const std::string& k
         // new_node->nibbles = nibbles;
         // new_node->value = std::vector<uint8_t>(value.begin(), value.end());
 
-        if (key_hash_str.size() % 2 == 0)
-        {
-            key_hash_str.insert(0, std::string("2"));
-            key_hash_str.insert(1, std::string("0"));
-        }
 
-        std::string key_rlp = Utils::RLP::Encode(key_hash_str);
-        std::string value_as_hex = Utils::Hex::ASCIIStringToHexString(value);
-
-        std::vector<std::string> list = { key_hash_str, value_as_hex};
-        std::string list_rlp = Utils::RLP::Encode(list);
-        std::cout << list_rlp << std::endl;
-
-        solidity::util::h256 root_hash = solidity::util::keccak256(std::move(Utils::Hex::string_to_hex_vector(list_rlp)));
-        std::stringstream ss;
-        ss << root_hash;
-
-        std::string root_hash_str(ss.str());
-        std::cout << root_hash << std::endl;
+        new_node->hash = calculate_node_hash(type, key, value);
+        std::cout << new_node->hash << std::endl;
 
         return new_node;
     }

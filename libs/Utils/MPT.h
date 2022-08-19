@@ -49,9 +49,12 @@ private:
     NodeType get_node_type(Node& node) const;
     std::unique_ptr<MPT::Node> update_internal(Node& node, const std::string& key, const std::string& value);
 
-    void add_prefix(std::vector<uint8_t>& nibbles) const;
-    std::vector<uint8_t> to_nibbles(const std::string& key) const;
+    void add_prefix(std::string& key_hash, NodeType type) const;
+    //std::vector<uint8_t> to_nibbles(const std::string& key) const;
 
+    std::string hash_string(const std::string& str);
+    std::string hash_data(const std::vector<uint8_t>& str);
+    std::string calculate_node_hash(NodeType type, const std::string& key, const std::string& value);
 private:
     std::unique_ptr<Node> m_root;
 };
