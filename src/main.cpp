@@ -67,6 +67,7 @@ int main(int argc, char *argv[])
 
     Utils::MPT tree;
     tree.update("32fa7c", "20"); // keccak of key - 4f6c1c50fde5f5d4f20c2979974a8f465b24e65062f02ef80f722200f35105e2
+    tree.update("32fa7b", "10");
     tree.print_contents();
     // tree.update("abbc", "2");
     // tree.print_contents();
