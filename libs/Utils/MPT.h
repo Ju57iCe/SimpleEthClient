@@ -14,7 +14,6 @@ class MPT
 private:
     enum class NodeType
     {
-        EMPTY_NODE,
         LEAF_NODE,
         EXTENSION_NODE,
         BRANCH_NODE
@@ -24,7 +23,7 @@ private:
 
     struct Node
     {
-        std::vector<uint8_t> value;
+        std::string value;
         std::vector<uint8_t> nibbles;
         std::string hash;
         std::array<std::unique_ptr<Node>, 16> branches;
@@ -42,19 +41,20 @@ public:
 
     void print_contents();
 private:
-    std::tuple<bool, uint64_t, MPT::Node*> find_parent(std::string key, MPT::Node* node, uint64_t total_nibbles_matched = 0);
-    void transform_leaf_node(MPT::Node* node, uint32_t nibbles_matched);
+    std::tuple<bool, uint64_t, MPT::Node&> find_parent(const std::string& key, MPT::Node& node, uint64_t total_nibbles_matched = 0);
+
+    void transform_leaf_node(MPT::Node& node, uint32_t nibbles_matched);
     void recalculate_hashes(MPT::Node* node);
     void print_contents_recursive(MPT::Node* parent, uint32_t branch_level = 0);
     NodeType get_node_type(Node& node) const;
-    std::unique_ptr<MPT::Node> update_internal(Node& node, const std::string& key, const std::string& value);
+    std::unique_ptr<MPT::Node> update_internal(Node& node, const std::string& key, uint32_t nibbles_matched, const std::string& value);
 
     void add_prefix(std::string& key_hash, NodeType type) const;
-    //std::vector<uint8_t> to_nibbles(const std::string& key) const;
+    std::vector<uint8_t> to_nibbles(const std::string& key_hash) const;
 
     std::string hash_string(const std::string& str);
     std::string hash_data(const std::vector<uint8_t>& str);
-    std::string calculate_node_hash(NodeType type, const std::string& key, const std::string& value);
+    std::string calculate_node_hash(NodeType type, std::string key, const std::string& value);
 private:
     std::unique_ptr<Node> m_root;
 };
