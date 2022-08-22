@@ -50,7 +50,7 @@ public:
 private:
     std::tuple<bool, uint64_t, MPT::Node&> find_parent(const std::string& key, MPT::Node& node, uint64_t total_nibbles_matched = 0);
 
-    void transform_leaf_node_to_extension_node(MPT::Node& node);
+    void transform_leaf_node_to_extension_node(MPT::Node& node, uint8_t nibbles_matched);
     void recalculate_hashes(MPT::Node& node);
     void print_contents_recursive(const MPT::Node& parent, uint32_t branch_level = 0) const;
 
