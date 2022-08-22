@@ -39,7 +39,9 @@ void MPT::update(const std::string& key, const std::string& value)
         return;
     }
 
+    std::unique_ptr<Node> leaf_node;
     Node* node;
+    Node* parent_node;
     uint64_t nibbles_matched = 0;
 
     std::string key_hash = hash_string(key);
@@ -52,7 +54,10 @@ void MPT::update(const std::string& key, const std::string& value)
     {
         auto res = find_parent(key_hash, *m_root.get());
         nibbles_matched = std::get<1>(res);
-        node = &std::get<2>(res);
+        parent_node = &std::get<2>(res);
+
+        leaf_node = std::unique_ptr<Node>(new MPT::Node);
+        node = leaf_node.get();
     }
 
     std::string remaining_nibbles(key_hash.begin() + nibbles_matched, key_hash.end());
@@ -61,9 +66,15 @@ void MPT::update(const std::string& key, const std::string& value)
     node->hash = calculate_node_hash(NodeType::LEAF_NODE, key_hash, value);
     std::cout << "Node hash - " << node->hash << std::endl;
 
-    recalculate_hashes(*node);
+    if (leaf_node)
+    {
+        uint8_t branch_point = node->nibbles[0];
+        node->nibbles.erase(node->nibbles.begin());
 
-    print_contents();
+        parent_node->branch_node.get()->branches[branch_point] = std::move(leaf_node);
+    }
+
+    recalculate_hashes(*node);
 }
 
 void MPT::add_prefix(std::string& key_hash, NodeType type) const
@@ -210,27 +221,37 @@ void MPT::print_contents() const
 
 void MPT::print_contents_recursive(const MPT::Node& node, uint32_t branch_level) const
 {
-    std::cout << "Level " << branch_level << " Node value: " << node.value << std::endl;
+    std::cout << "Level " << branch_level;
 
-    std::cout << " , nibbles: '";
-    for (auto& c : node.nibbles)
-        std::cout  << (uint32_t)c << " ";
-    std::cout << "' " << std::flush;
+    if (!node.value.empty())
+        std::cout << " Node value: " << node.value;
 
     if (node.branch_node)
     {
         std::cout << ", branches:";
-
         auto& branches = node.branch_node->branches;
         for (uint8_t i = 0; i < branches.size(); ++i)
-            if (branches[i] != nullptr) std::cout << " " << std::hex << (uint32_t)i << std::dec;
-
+            if (branches[i] != nullptr)
+                std::cout << " " << std::hex << (uint32_t)i << std::dec;
         std::cout << std::endl;
+    }
 
+    if (!node.nibbles.empty())
+    {
+        std::cout << "Nibbles: ";
+        for (auto& n : node.nibbles)
+            std::cout << (uint32_t)n << " ";
+        std::cout << std::endl;
+    }
+
+    if (node.branch_node)
+    {
+        auto& branches = node.branch_node->branches;
         for (uint8_t i = 0; i < branches.size(); ++i)
         {
             if (branches[i] != nullptr)
             {
+                std::cout << "Branch " << std::hex << (uint32_t)i << ":" << std::dec << std::endl;
                 print_contents_recursive(*branches[i].get(), branch_level+1);
             }
             if (i == 15)
@@ -239,7 +260,7 @@ void MPT::print_contents_recursive(const MPT::Node& node, uint32_t branch_level)
     }
     else
     {
-        std::cout << " no branches." << std::endl;
+        std::cout << "Node has no branches." << std::endl << std::endl;
     }
 }
 
