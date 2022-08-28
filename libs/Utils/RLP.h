@@ -9,13 +9,16 @@
 namespace Utils::RLP
 {
 
-std::string Encode(std::string str);
+std::vector<uint8_t> generate_string_prefix(const std::string& str);
+std::vector<uint8_t> generate_long_list_prefix(uint32_t length);
+
+std::string Encode(const std::string& str);
 std::string Decode(std::vector<uint8_t>& data);
 
-std::string Encode(std::vector<std::string> strings);
+std::string Encode(const std::vector<std::string>& strings);
 std::vector<std::string> DecodeList(std::vector<uint8_t>& data);
 
-std::vector<uint8_t> Encode(std::any input);
+std::vector<uint8_t> Encode(const std::any& input);
 std::any DecodeAny(std::vector<uint8_t>& data);
 
 }

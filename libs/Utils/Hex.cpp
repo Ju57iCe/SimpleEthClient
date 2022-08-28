@@ -11,10 +11,12 @@
 namespace Utils::Hex
 {
 
-// std::string ToHex(uint8_t value)
-// {
-//     return (boost::format("%x") % (unsigned)value).str();
-// }
+std::string int_to_hex_str(uint8_t i)
+{
+    std::stringstream stream;
+    stream << std::hex << (uint32_t)i;
+    return stream.str();
+}
 
 std::string ASCIIStringToHexString(std::string str)
 {
@@ -37,5 +39,7 @@ std::vector<uint8_t> string_to_hex_vector(std::string str)
 
     return res;
 }
+
+
 
 }

@@ -4,8 +4,7 @@
 #include <memory>
 #include <vector>
 #include <string>
-#include <bitset>
-#include <any>
+#include <variant>
 
 namespace Utils
 {
@@ -15,7 +14,8 @@ private:
     enum class NodeType
     {
         LEAF_NODE,
-        EXTENSION_NODE
+        EXTENSION_NODE,
+        BRANCH_NODE
     };
 
     //static constexpr uint8_t NIBBLE_TERMINATOR = 16;
@@ -59,7 +59,7 @@ private:
 
     std::string hash_string(const std::string& str) const;
     std::string hash_data(const std::vector<uint8_t>& str) const;
-    std::string calculate_node_hash(NodeType type, std::string key, const std::string& value) const;
+    std::string calculate_node_hash(NodeType type, std::variant<const Node*, const BranchNode*> node) const;
 private:
     std::unique_ptr<Node> m_root;
 };

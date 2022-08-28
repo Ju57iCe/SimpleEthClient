@@ -31,7 +31,38 @@ std::vector<uint8_t> split_value_to_bytes(T const& value)
     return bytes;
 }
 
-std::vector<uint8_t> generate_string_prefix(std::string& str)
+item_properties get_item_size_from_data(std::vector<uint8_t>& data, uint32_t offset = 0)
+{
+    item_properties res;
+
+    if (data[offset] < Utils::RLP::LONG_STRING_PREFIX)
+    {
+        res.size = data[offset] - Utils::RLP::SHORT_STRING_PREFIX;
+    }
+    else if (data[offset] < Utils::RLP::SHORT_LIST_PREFIX)
+    {
+        res.length_in_bytes = data[offset] - Utils::RLP::LONG_STRING_PREFIX;
+        res.size = Utils::Byte::GetIntFromBytes(res.length_in_bytes, data);
+    }
+    else if (data[offset] < Utils::RLP::LONG_LIST_PREFIX)
+    {
+        res.size = data[offset] - Utils::RLP::SHORT_LIST_PREFIX;
+    }
+    else
+    {
+        res.length_in_bytes = data[offset] - Utils::RLP::LONG_LIST_PREFIX;
+        res.size = Utils::Byte::GetIntFromBytes(res.length_in_bytes, data);
+    }
+
+    return res;
+}
+
+}
+
+namespace Utils::RLP
+{
+
+std::vector<uint8_t> generate_string_prefix(const std::string& str)
 {
     std::vector<uint8_t> prefix_res;
 
@@ -85,38 +116,7 @@ std::vector<uint8_t> generate_long_list_prefix(uint32_t length)
     return res;
 }
 
-item_properties get_item_size_from_data(std::vector<uint8_t>& data, uint32_t offset = 0)
-{
-    item_properties res;
-
-    if (data[offset] < Utils::RLP::LONG_STRING_PREFIX)
-    {
-        res.size = data[offset] - Utils::RLP::SHORT_STRING_PREFIX;
-    }
-    else if (data[offset] < Utils::RLP::SHORT_LIST_PREFIX)
-    {
-        res.length_in_bytes = data[offset] - Utils::RLP::LONG_STRING_PREFIX;
-        res.size = Utils::Byte::GetIntFromBytes(res.length_in_bytes, data);
-    }
-    else if (data[offset] < Utils::RLP::LONG_LIST_PREFIX)
-    {
-        res.size = data[offset] - Utils::RLP::SHORT_LIST_PREFIX;
-    }
-    else
-    {
-        res.length_in_bytes = data[offset] - Utils::RLP::LONG_LIST_PREFIX;
-        res.size = Utils::Byte::GetIntFromBytes(res.length_in_bytes, data);
-    }
-
-    return res;
-}
-
-}
-
-namespace Utils::RLP
-{
-
-std::string Encode(std::string str)
+std::string Encode(const std::string& str)
 {
     std::vector<uint8_t> prefix = generate_string_prefix(str);
 
@@ -162,7 +162,7 @@ std::string Decode(std::vector<uint8_t>& data)
     return res;
 }
 
-std::string Encode(std::vector<std::string> strings)
+std::string Encode(const std::vector<std::string>& strings)
 {
     std::stringstream ss;
     std::string result;
@@ -232,7 +232,7 @@ std::vector<std::string> DecodeList(std::vector<uint8_t>& data)
     return result;
 }
 
-std::vector<uint8_t> Encode(std::any input)
+std::vector<uint8_t> Encode(const std::any& input)
 {
     std::vector<uint8_t> result;
 

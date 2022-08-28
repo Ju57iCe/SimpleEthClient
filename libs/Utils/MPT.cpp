@@ -8,15 +8,6 @@
 #include <iostream>
 #include <sstream>
 
-namespace
-{
-
-int HexToByte(const char& nibble_one, const char& nibble_two)
-{
-    return nibble_one * 16 + nibble_two;
-}
-
-}
 namespace Utils
 {
 
@@ -63,16 +54,24 @@ void MPT::update(const std::string& key, const std::string& value)
     std::string remaining_nibbles(key_hash.begin() + nibbles_matched, key_hash.end());
     node->nibbles = to_nibbles(remaining_nibbles);
     node->value = value;
-    node->hash = calculate_node_hash(NodeType::LEAF_NODE, key_hash, value);
-    std::cout << "New node hash - " << node->hash << std::endl;
 
     if (leaf_node)
     {
         uint8_t branch_point = node->nibbles[0];
         node->nibbles.erase(node->nibbles.begin());
-
+        node->hash = calculate_node_hash(NodeType::LEAF_NODE, node);
         parent_node->branch_node.get()->branches[branch_point] = std::move(leaf_node);
+
+        parent_node->hash = calculate_node_hash(NodeType::BRANCH_NODE,
+                                                std::variant<const Node*, const BranchNode*>(parent_node->branch_node.get()));
     }
+    else
+    {
+        node->hash = calculate_node_hash(NodeType::LEAF_NODE, node);
+    }
+
+    std::cout << "Hash of the newly addded node" << std::endl;
+    std::cout << node->hash << std::endl;
 
     recalculate_hashes(*node);
 }
@@ -82,28 +81,16 @@ void MPT::add_prefix(std::string& key_hash, NodeType type) const
     if (type == NodeType::LEAF_NODE)
     {
         if (key_hash.size() % 2 == 0)
-        {
-            key_hash.insert(0, std::string("2"));
-            key_hash.insert(1, std::string("0"));
-        }
+            key_hash.insert(0, std::string("20"));
         else
-        {
             key_hash.insert(0, std::string("3"));
-            key_hash.insert(1, std::string("0"));
-        }
     }
     else if (type == NodeType::EXTENSION_NODE)
     {
         if (key_hash.size() % 2 == 0)
-        {
-            key_hash.insert(0, std::string("0"));
-            key_hash.insert(1, std::string("0"));
-        }
+            key_hash.insert(0, std::string("00"));
         else
-        {
             key_hash.insert(0, std::string("1"));
-            key_hash.insert(1, std::string("0"));
-        }
     }
 }
 
@@ -134,17 +121,61 @@ std::vector<uint8_t> MPT::to_nibbles(const std::string& key) const
     return res;
 }
 
-std::string MPT::calculate_node_hash(NodeType type, std::string key_hash, const std::string& value) const
+std::string MPT::calculate_node_hash(NodeType type, std::variant<const Node*, const BranchNode*> node) const
 {
-    add_prefix(key_hash, type);
+    std::string node_hash;
 
-    std::string key_rlp = Utils::RLP::Encode(key_hash);
-    std::string value_as_hex = Utils::Hex::ASCIIStringToHexString(value);
+    if (type == NodeType::LEAF_NODE  || type == NodeType::EXTENSION_NODE)
+    {
+        const Node* leaf = std::get<const Node*>(node);
 
-    std::string list_rlp = Utils::RLP::Encode({ key_hash, value_as_hex});
+        std::string key_hash;
+        for(auto& n : leaf->nibbles)
+            key_hash.push_back(Utils::Hex::HexIntToASCII[n]);
 
-    std::string root_hash = hash_data(std::move(Utils::Hex::string_to_hex_vector(list_rlp)));
-    return root_hash;
+        add_prefix(key_hash, type);
+
+        std::string value_as_hex = Utils::Hex::ASCIIStringToHexString(leaf->value);
+
+        std::string list_rlp = Utils::RLP::Encode({key_hash, value_as_hex});
+
+        node_hash = hash_data(std::move(Utils::Hex::string_to_hex_vector(list_rlp)));
+    }
+    else if (type == NodeType::BRANCH_NODE)
+    {
+        const BranchNode* branch_node = std::get<const BranchNode*>(node);
+
+        std::string keys_to_rlp;
+        for (auto& branch : branch_node->branches)
+        {
+            if (branch == nullptr)
+                keys_to_rlp.append(Utils::RLP::Encode(std::string("")));
+            else
+                keys_to_rlp.append(Utils::RLP::Encode(branch->hash));
+        }
+
+        std::string value_as_hex = branch_node->value.empty() ? "80" : Utils::Hex::ASCIIStringToHexString(branch_node->value);
+        keys_to_rlp.insert(keys_to_rlp.end(), value_as_hex.begin(), value_as_hex.end());
+
+        std::vector<uint8_t> prefix = Utils::RLP::generate_long_list_prefix(keys_to_rlp.size()/2);
+
+        std::string list_prefix;
+        for (uint32_t i = 0; i < prefix.size(); ++i)
+        {
+            std::string hex_str = Utils::Hex::int_to_hex_str(prefix[i]);
+            list_prefix.insert(list_prefix.end(), hex_str.begin(), hex_str.end());
+        }
+
+        std::string list_rlp;
+        list_rlp.insert(list_rlp.begin(), list_prefix.begin(), list_prefix.end());
+        list_rlp.insert(list_rlp.end(), keys_to_rlp.begin(), keys_to_rlp.end());
+
+        std::cout << list_rlp << std::endl;
+
+        node_hash = hash_data(std::move(Utils::Hex::string_to_hex_vector(list_rlp)));
+    }
+
+    return node_hash;
 }
 
 std::tuple<bool, uint64_t, MPT::Node&> MPT::find_parent(const std::string& key_hash, MPT::Node& node, uint64_t total_nibbles_matched)
@@ -199,18 +230,16 @@ void MPT::transform_leaf_node_to_extension_node(MPT::Node& node, uint8_t nibbles
 {
     std::unique_ptr<Node> moved_node(new Node());
     moved_node->value = node.value;
-    moved_node->nibbles = std::vector(node.nibbles.begin() + nibbles_matched, node.nibbles.end());
+    moved_node->nibbles = std::vector(node.nibbles.begin() + 1 + nibbles_matched, node.nibbles.end());
     moved_node->branch_node = std::move(node.branch_node);
-    moved_node->hash = calculate_node_hash(NodeType::LEAF_NODE,
-                                            std::string(moved_node->nibbles.begin(), moved_node->nibbles.end()),
-                                            moved_node->value);
+
+    moved_node->hash = calculate_node_hash(NodeType::LEAF_NODE, std::variant<const Node*, const BranchNode*>(moved_node.get()));
 
     node.value.clear();
     node.nibbles = std::vector(node.nibbles.begin(), node.nibbles.begin() + nibbles_matched);
     node.branch_node = std::unique_ptr<BranchNode>(new BranchNode);
-    node.hash = calculate_node_hash(NodeType::EXTENSION_NODE,
-                                        std::string(node.nibbles.begin(), node.nibbles.end()),
-                                        node.value);
+
+    node.hash = calculate_node_hash(NodeType::EXTENSION_NODE, std::variant<const Node*, const BranchNode*>(&node));
 
     uint8_t branch_point = moved_node->nibbles[0];
     moved_node->nibbles.erase(moved_node->nibbles.begin());
