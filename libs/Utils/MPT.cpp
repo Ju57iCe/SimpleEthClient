@@ -70,10 +70,10 @@ void MPT::update(const std::string& key, const std::string& value)
         node->hash = calculate_node_hash(NodeType::LEAF_NODE, node);
     }
 
-    std::cout << "Hash of the newly addded node" << std::endl;
-    std::cout << node->hash << std::endl;
-
     recalculate_hashes(*node);
+
+    std::cout << "New node's hash " << node->hash
+        << ", root hash " << m_root->hash << std::endl;
 }
 
 void MPT::add_prefix(std::string& key_hash, NodeType type) const
@@ -170,8 +170,6 @@ std::string MPT::calculate_node_hash(NodeType type, std::variant<const Node*, co
         list_rlp.insert(list_rlp.begin(), list_prefix.begin(), list_prefix.end());
         list_rlp.insert(list_rlp.end(), keys_to_rlp.begin(), keys_to_rlp.end());
 
-        std::cout << list_rlp << std::endl;
-
         node_hash = hash_data(std::move(Utils::Hex::string_to_hex_vector(list_rlp)));
     }
 
@@ -208,7 +206,7 @@ std::tuple<bool, uint64_t, MPT::Node&> MPT::find_parent(const std::string& key_h
         }
         else
         {
-            uint8_t branch_point = Utils::Hex::ASCIIHexToInt[(uint8_t)key_hash_nibbles[nibbles_matched]];
+            uint8_t branch_point = key_hash_nibbles[nibbles_matched];
             bool branch_exists = node.branch_node.get() != nullptr && node.branch_node->branches[branch_point].get() != nullptr;
             if (branch_exists)
             {
@@ -255,47 +253,66 @@ void MPT::print_contents() const
 
 void MPT::print_contents_recursive(const MPT::Node& node, uint32_t branch_level) const
 {
-    std::cout << "Level " << branch_level;
+    std::cout << std::endl << "Level " << branch_level << ": ";
 
-    if (!node.value.empty())
-        std::cout << " Node value: " << node.value << " ";
-
+    NodeType type; // ToDo move this as a member of the node and determine it when the node is added/changed
     if (node.branch_node)
     {
-        std::cout << ", branches:";
-        auto& branches = node.branch_node->branches;
-        for (uint8_t i = 0; i < branches.size(); ++i)
-            if (branches[i] != nullptr)
-                std::cout << " " << std::hex << (uint32_t)i << std::dec;
-        std::cout << std::endl;
+        if (node.nibbles.empty())
+        {
+            type = NodeType::BRANCH_NODE;
+            std::cout << "Branch node" << std::endl;
+        }
+        else
+        {
+            type = NodeType::EXTENSION_NODE;
+            std::cout << "Extension node" << std::endl;
+        }
+    }
+    else
+    {
+        type = type = NodeType::LEAF_NODE;
+        std::cout << "Leaf node" << std::endl;
     }
 
-    if (!node.nibbles.empty())
+    std::cout << "\t Hash: " << node.hash << std::endl;
+
+    if (type == NodeType::EXTENSION_NODE || type == NodeType::LEAF_NODE)
     {
-        std::cout << "Nibbles: ";
+        std::cout << "\t Nibbles: ";
         for (auto& n : node.nibbles)
             std::cout << (uint32_t)n << " ";
         std::cout << std::endl;
     }
-    std::cout << "Node hash: " << node.hash << std::endl;
+
+    if (type == NodeType::EXTENSION_NODE || type == NodeType::BRANCH_NODE)
+    {
+        std::cout << "\t Branches:" << std::endl;
+
+        const auto& branches = node.branch_node->branches;
+        for (uint8_t i = 0; i < branches.size(); ++i)
+        {
+            std::cout << "\t\t branch " << std::hex << (uint32_t)i << std::dec << " ";
+            std::cout << (branches[i] != nullptr ? branches[i]->hash : "") << std::endl;
+        }
+    }
+
+    if (!node.value.empty())
+        std::cout << "\t Value: " << node.value << std::endl;
 
     if (node.branch_node)
     {
+        std::cout << std::endl;
         auto& branches = node.branch_node->branches;
         for (uint8_t i = 0; i < branches.size(); ++i)
         {
             if (branches[i] != nullptr)
             {
-                std::cout << "Branch " << std::hex << (uint32_t)i << ":" << std::dec << std::endl;
                 print_contents_recursive(*branches[i].get(), branch_level+1);
             }
             if (i == 15)
                 std::cout << std::endl;
         }
-    }
-    else
-    {
-        std::cout << "Node has no branches." << std::endl << std::endl;
     }
 }
 
