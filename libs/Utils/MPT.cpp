@@ -326,4 +326,10 @@ void MPT::delete_node(std::string key)
 
 }
 
+std::string MPT::get_root_hash() const
+{
+    return m_root ? m_root->hash : "";
 }
+
+}
+

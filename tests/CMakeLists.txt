@@ -26,6 +26,7 @@ add_executable(
   rlp_tests.cpp
 )
 
+target_include_directories(rlp_tests PUBLIC ${ROOT_DIR}/libs)
 target_link_libraries(rlp_tests PRIVATE utils)
 target_link_libraries(rlp_tests PRIVATE gtest_main)
 
@@ -37,6 +38,7 @@ add_executable(
   mpt_tests.cpp
 )
 
+target_include_directories(mpt_tests PUBLIC ${ROOT_DIR}/libs)
 target_link_libraries(mpt_tests PRIVATE utils)
 target_link_libraries(mpt_tests PRIVATE gtest_main)
 

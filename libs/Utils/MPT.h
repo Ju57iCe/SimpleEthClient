@@ -46,6 +46,7 @@ public:
     void generate_proof(std::string key) const;
     void verify_proof(std::string key) const;
 
+    std::string get_root_hash() const;
     void print_contents() const;
 private:
     std::tuple<bool, uint64_t, MPT::Node&> find_parent(const std::string& key, MPT::Node& node, uint64_t total_nibbles_matched = 0);
