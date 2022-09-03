@@ -13,7 +13,7 @@ std::vector<uint8_t> generate_string_prefix(const std::string& str);
 std::vector<uint8_t> generate_long_list_prefix(uint32_t length);
 
 std::string Encode(const std::string& str);
-std::string Decode(std::vector<uint8_t>& data);
+std::string Decode(const std::string& data);
 
 std::string Encode(const std::vector<std::string>& strings);
 std::vector<std::string> DecodeList(std::vector<uint8_t>& data);

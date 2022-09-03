@@ -1,31 +1,34 @@
-// #include <gtest/gtest.h>
+#include <gtest/gtest.h>
 
-// #include <vector>
-// #include <any>
-// #include <cstdint>
+#include <vector>
+#include <string>
+#include <any>
+#include <cstdint>
 
-// #include <Utils/RLP.h>
-// #include <Utils/RLPConstants.h>
+#include <Utils/RLP.h>
+#include <Utils/RLPConstants.h>
 
-// TEST(RLP, EmptyString)
-// {
-//     std::vector<uint8_t> bytes = Utils::RLP::Encode(std::string(""));
+TEST(RLP, EmptyString)
+{
+    std::string empty_str;
+    std::string nibbles = Utils::RLP::Encode(empty_str);
 
-//     EXPECT_EQ(bytes.size(), 1);
-//     EXPECT_EQ(bytes[0], 128);
+    EXPECT_EQ(nibbles.size(), 2);
+    EXPECT_EQ(nibbles[0], '8');
+    EXPECT_EQ(nibbles[1], '0');
 
-//     std::string str = Utils::RLP::Decode(bytes);
-//     ASSERT_EQ(str, "");
-// }
+    std::string str = Utils::RLP::Decode(nibbles);
+    ASSERT_EQ(str, "80");
+}
 
 // TEST(RLP, SingleLetterString)
 // {
-//     std::vector<uint8_t> bytes = Utils::RLP::Encode(std::string("A"));
+//     std::string nibbles = Utils::RLP::Encode(std::string("A"));
 
-//     EXPECT_EQ(bytes.size(), 1);
-//     EXPECT_EQ(bytes[0], 65);
+//     EXPECT_EQ(nibbles.size(), 1);
+//     EXPECT_EQ(nibbles[0], 65);
 
-//     std::string str = Utils::RLP::Decode(bytes);
+//     std::string str = Utils::RLP::Decode(nibbles);
 //     ASSERT_EQ(str, "A");
 // }
 

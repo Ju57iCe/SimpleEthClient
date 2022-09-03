@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Hex.h"
+
 #include <vector>
 #include <cstdint>
 #include <array>
@@ -24,7 +26,7 @@ void TrimLeadingZeroBytes(std::vector<uint8_t>& bytes)
         bytes.erase(bytes.begin(), bytes.begin() + elementsToRemove);
 }
 
-std::array<uint8_t, 4> ConstructUint32FromData(std::vector<uint8_t>& data,
+std::array<uint8_t, 4> ConstructUint32FromData(const std::string& data,
                                                 uint32_t size_length)
 {
     std::array<uint8_t, 4> res;
@@ -34,15 +36,20 @@ std::array<uint8_t, 4> ConstructUint32FromData(std::vector<uint8_t>& data,
     {
         bool pad_with_zero = (bytes_size - (int32_t)size_length - i) > 0;
         if (pad_with_zero)
+        {
             res[i] = 0;
+        }
         else
-            res[i] = data[i];
+        {
+            uint8_t byte_from_str = Utils::Hex::uint8_from_hex(data[2*i], data[2*i+1]);
+            res[i] = byte_from_str;
+        }
     }
 
     return res;
 }
 
-std::array<uint8_t, 8> ConstructUint64FromData(std::vector<uint8_t>& data,
+std::array<uint8_t, 8> ConstructUint64FromData(const std::string& data,
                                                 uint32_t size_length)
 {
     std::array<uint8_t, 8> res;
@@ -52,9 +59,14 @@ std::array<uint8_t, 8> ConstructUint64FromData(std::vector<uint8_t>& data,
     {
         bool pad_with_zero = (bytes_size - (int32_t)size_length - i) > 0;
         if (pad_with_zero)
+        {
             res[i] = 0;
+        }
         else
-            res[i] = data[i];
+        {
+            uint8_t byte_from_str = Utils::Hex::uint8_from_hex(data[2*i], data[2*i+1]);
+            res[i] = byte_from_str;
+        }
     }
 
     return res;
@@ -123,16 +135,19 @@ uint64_t uint64FromBytes(std::array<uint8_t, 8> bytes)
     return result;
 }
 
-uint64_t GetIntFromBytes(uint32_t size_length, std::vector<uint8_t>& data)
+uint64_t GetIntFromBytes(uint32_t size_length, const std::string& data)
 {
     uint64_t str_size = 0;
-    if (size_length == 1) // ToDo - Is this valid case?
+    if (size_length == 1)
     {
-        str_size = data[1];
+        str_size = Utils::Hex::uint8_from_hex(data[3], data[4]);
     }
     else if (size_length == sizeof(uint16_t))
     {
-        str_size = Utils::Byte::uint16FromBytes({data[1], data[2]});
+        uint8_t first_byte = Utils::Hex::uint8_from_hex(data[3], data[4]);
+        uint8_t second_byte = Utils::Hex::uint8_from_hex(data[5], data[6]);
+
+        str_size = Utils::Byte::uint16FromBytes({first_byte, second_byte});
     }
     else if (size_length <= sizeof(uint32_t))
     {

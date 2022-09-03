@@ -11,6 +11,11 @@
 namespace Utils::Hex
 {
 
+uint8_t uint8_from_hex(uint8_t nibble_one, uint8_t nibble_two)
+{
+    return ASCIIHexToInt[nibble_one] * 16 + ASCIIHexToInt[nibble_two];
+}
+
 std::string int_to_hex_str(uint8_t i)
 {
     std::stringstream stream;
