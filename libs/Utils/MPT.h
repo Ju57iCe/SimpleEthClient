@@ -49,7 +49,7 @@ public:
     std::string get_root_hash() const;
     void print_contents() const;
 private:
-    std::tuple<bool, uint64_t, MPT::Node&> find_parent(const std::string& key, MPT::Node& node, uint64_t total_nibbles_matched = 0);
+    std::tuple<uint64_t, MPT::Node&> find_parent(const std::string& key, MPT::Node& node, uint64_t total_nibbles_matched = 0);
 
     void transform_leaf_node_to_extension_node(MPT::Node& node, uint8_t nibbles_matched);
     void recalculate_hashes(MPT::Node& node);
@@ -60,7 +60,8 @@ private:
 
     std::string hash_string(const std::string& str) const;
     std::string hash_data(const std::vector<uint8_t>& str) const;
-    std::string calculate_node_hash(NodeType type, std::variant<const Node*, const BranchNode*> node) const;
+    std::string calculate_node_hash(NodeType type,
+                                    std::variant<const Node*, const BranchNode*> node) const;
 private:
     std::unique_ptr<Node> m_root;
 };

@@ -16,10 +16,19 @@
 //     ASSERT_EQ(0, 0);
 // }
 
-// TEST(MPT, UpdateKeyValue)
-// {
-//     ASSERT_EQ(0,0);
-// }
+TEST(MPT, UpdateKeyValue)
+{
+    Utils::MPT tree;
+    tree.update("32fa7b", "10");
+    tree.update("32fa7c", "20");
+    tree.update("32fa7b", "20");
+
+    std::string expeted_str = "17ad474b4cfa5db24e50835a52a6f5263dbf334784462440bdfe7b4fa0b57b5f";
+    std::string actual = tree.get_root_hash();
+    EXPECT_TRUE(actual == expeted_str);
+
+    ASSERT_EQ(0,0);
+}
 
 TEST(MPT, UpdateKeysAndValues)
 {

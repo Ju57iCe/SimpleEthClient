@@ -30,50 +30,51 @@ void MPT::update(const std::string& key, const std::string& value)
         return;
     }
 
-    std::unique_ptr<Node> leaf_node;
-    Node* node;
-    Node* parent_node;
-    uint64_t nibbles_matched = 0;
-
     std::string key_hash = hash_string(key);
-    if (!m_root)
-    {
-        m_root = std::unique_ptr<Node>(new MPT::Node);
-        node = m_root.get();
-    }
-    else
+    if (m_root)
     {
         auto res = find_parent(key_hash, *m_root.get());
-        nibbles_matched = std::get<1>(res);
-        parent_node = &std::get<2>(res);
+        uint64_t nibbles_matched = std::get<0>(res);
+        Node* parent_node = &std::get<1>(res);
 
-        leaf_node = std::unique_ptr<Node>(new MPT::Node);
-        node = leaf_node.get();
-    }
+        auto nibbles = to_nibbles(std::string (key_hash.begin() + nibbles_matched, key_hash.end()));
+        uint8_t branch_point = nibbles[0];
 
-    std::string remaining_nibbles(key_hash.begin() + nibbles_matched, key_hash.end());
-    node->nibbles = to_nibbles(remaining_nibbles);
-    node->value = value;
+        Node* leaf_node = parent_node->branch_node.get()->branches[branch_point].get();
 
-    if (leaf_node)
-    {
-        uint8_t branch_point = node->nibbles[0];
-        node->nibbles.erase(node->nibbles.begin());
-        node->hash = calculate_node_hash(NodeType::LEAF_NODE, node);
-        parent_node->branch_node.get()->branches[branch_point] = std::move(leaf_node);
+        if (leaf_node == nullptr)
+        {
+            std::unique_ptr<Node> leaf_node = std::unique_ptr<Node>(new MPT::Node);
+            leaf_node->nibbles = nibbles;
+            leaf_node->value = value;
+
+            leaf_node->nibbles.erase(leaf_node->nibbles.begin());
+            leaf_node->hash = calculate_node_hash(NodeType::LEAF_NODE,
+                                                    leaf_node.get());
+            parent_node->branch_node.get()->branches[branch_point] = std::move(leaf_node);
+        }
+        else
+        {
+            leaf_node->value = value;
+            leaf_node->hash = calculate_node_hash(NodeType::LEAF_NODE,
+                                                    leaf_node);
+        }
 
         parent_node->hash = calculate_node_hash(NodeType::BRANCH_NODE,
                                                 std::variant<const Node*, const BranchNode*>(parent_node->branch_node.get()));
+
+        recalculate_hashes(*leaf_node);
     }
     else
     {
-        node->hash = calculate_node_hash(NodeType::LEAF_NODE, node);
+        m_root = std::unique_ptr<Node>(new MPT::Node);
+
+        m_root->nibbles = to_nibbles(std::string(key_hash.begin(), key_hash.end()));
+        m_root->value = value;
+
+        m_root->hash = calculate_node_hash(NodeType::LEAF_NODE, m_root.get());
+        recalculate_hashes(*m_root.get());
     }
-
-    recalculate_hashes(*node);
-
-    std::cout << "New node's hash " << node->hash
-        << ", root hash " << m_root->hash << std::endl;
 }
 
 void MPT::add_prefix(std::string& key_hash, NodeType type) const
@@ -176,71 +177,76 @@ std::string MPT::calculate_node_hash(NodeType type, std::variant<const Node*, co
     return node_hash;
 }
 
-std::tuple<bool, uint64_t, MPT::Node&> MPT::find_parent(const std::string& key_hash, MPT::Node& node, uint64_t total_nibbles_matched)
+std::tuple<uint64_t, MPT::Node&> MPT::find_parent(const std::string& key_hash, MPT::Node& node, uint64_t total_nibbles_matched)
 {
     bool node_found = false;
     uint64_t nibbles_matched = 0;
     while(!node_found)
     {
         auto key_hash_nibbles = to_nibbles(key_hash);
-
         for (uint64_t i = 0; i < node.nibbles.size(); ++i)
         {
             if (node.nibbles[i] == key_hash_nibbles[i])
-            {
                 nibbles_matched++;
-                continue;
-            }
             else
-            {
                 break;
-            }
         }
 
         if (nibbles_matched != node.nibbles.size())
         {
             transform_leaf_node_to_extension_node(node, nibbles_matched);
-
-            std::tuple<bool, uint64_t, MPT::Node&> res = {true, nibbles_matched, node};
-            return res;
+            return {nibbles_matched, node};
         }
         else
         {
             uint8_t branch_point = key_hash_nibbles[nibbles_matched];
-            bool branch_exists = node.branch_node.get() != nullptr && node.branch_node->branches[branch_point].get() != nullptr;
+            bool branch_exists = node.branch_node.get() != nullptr
+                && node.branch_node->branches[branch_point].get() != nullptr;
+
             if (branch_exists)
             {
-                std::string new_key(key_hash.begin() + nibbles_matched, key_hash.end());
-                return find_parent(new_key, *node.branch_node->branches[branch_point].get(), total_nibbles_matched + nibbles_matched);
+                std::string node_nibbles = Utils::Hex::nibbles_to_hex_str(node.branch_node->branches[branch_point]->nibbles);
+                node_nibbles.insert(node_nibbles.begin(), Utils::Hex::HexIntToASCII[branch_point]);
+
+                if(node_nibbles == key_hash)
+                {
+                    return {total_nibbles_matched + nibbles_matched, node};
+                }
+                else
+                {
+                    std::string new_key(key_hash.begin() + nibbles_matched, key_hash.end());
+                    return find_parent(new_key, *node.branch_node->branches[branch_point].get(), total_nibbles_matched + nibbles_matched);
+                }
             }
             else
             {
-                return {true, total_nibbles_matched + nibbles_matched, node};
+                return {total_nibbles_matched + nibbles_matched, node};
             }
         }
     }
 
-    std::tuple<bool, uint64_t, MPT::Node&> res = {false, nibbles_matched, node};
-    return res;
+    return {nibbles_matched, node};
 }
 
 void MPT::transform_leaf_node_to_extension_node(MPT::Node& node, uint8_t nibbles_matched)
 {
     std::unique_ptr<Node> moved_node(new Node());
     moved_node->value = node.value;
-    moved_node->nibbles = std::vector(node.nibbles.begin() + 1 + nibbles_matched, node.nibbles.end());
+    moved_node->nibbles = std::vector(node.nibbles.begin() + nibbles_matched, node.nibbles.end());
     moved_node->branch_node = std::move(node.branch_node);
 
-    moved_node->hash = calculate_node_hash(NodeType::LEAF_NODE, std::variant<const Node*, const BranchNode*>(moved_node.get()));
+    uint8_t branch_point = moved_node->nibbles[0];
 
     node.value.clear();
     node.nibbles = std::vector(node.nibbles.begin(), node.nibbles.begin() + nibbles_matched);
     node.branch_node = std::unique_ptr<BranchNode>(new BranchNode);
 
-    node.hash = calculate_node_hash(NodeType::EXTENSION_NODE, std::variant<const Node*, const BranchNode*>(&node));
+    node.hash = calculate_node_hash(NodeType::EXTENSION_NODE,
+                                    std::variant<const Node*, const BranchNode*>(&node));
 
-    uint8_t branch_point = moved_node->nibbles[0];
     moved_node->nibbles.erase(moved_node->nibbles.begin());
+    moved_node->hash = calculate_node_hash(NodeType::LEAF_NODE,
+                                            std::variant<const Node*, const BranchNode*>(moved_node.get()));
 
     node.branch_node->branches[branch_point] = std::move(moved_node);
 }
