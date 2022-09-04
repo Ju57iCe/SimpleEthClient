@@ -21,16 +21,16 @@ TEST(RLP, EmptyString)
     ASSERT_EQ(str, "80");
 }
 
-// TEST(RLP, SingleLetterString)
-// {
-//     std::string nibbles = Utils::RLP::Encode(std::string("A"));
+TEST(RLP, SingleLetterString)
+{
+    std::string nibbles = Utils::RLP::Encode(std::string("A"));
 
-//     EXPECT_EQ(nibbles.size(), 1);
-//     EXPECT_EQ(nibbles[0], 65);
+    EXPECT_EQ(nibbles.size(), 1);
+    EXPECT_EQ(nibbles[0], 'A');
 
-//     std::string str = Utils::RLP::Decode(nibbles);
-//     ASSERT_EQ(str, "A");
-// }
+    std::string str = Utils::RLP::Decode(nibbles);
+    ASSERT_EQ(str, "A");
+}
 
 // TEST(RLP, ShortString)
 // {

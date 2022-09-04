@@ -67,7 +67,7 @@ std::vector<uint8_t> generate_string_prefix(const std::string& str)
 {
     std::vector<uint8_t> prefix_res;
 
-    uint8_t bytes = str.size() / 2;
+    uint8_t bytes = str.size() % 2 == 0 ? str.size() / 2 : str.size() / 2 + 1;
 
     /// Empty string encoding
     if (bytes == 0)
@@ -120,16 +120,24 @@ std::vector<uint8_t> generate_long_list_prefix(uint32_t length)
 std::string Encode(const std::string& str)
 {
     std::vector<uint8_t> prefix = generate_string_prefix(str);
-
-    std::stringstream ss;
-    for (uint8_t& c : prefix)
-        ss << std::hex << std::setw(2) << std::setfill('0') << (0xff & (unsigned char)c);
-
-    std::string result(ss.str());
-
-    if (str.size() > 1)
+    std::string result;
+    if (str.size() == 1)
     {
-        result.insert(result.end(), str.begin(), str.end());
+        result.push_back(prefix[0]);
+        return result;
+    }
+    else
+    {
+        std::stringstream ss;
+        for (uint8_t& c : prefix)
+            ss << std::hex << std::setw(2) << std::setfill('0') << (0xff & (unsigned char)c);
+
+        result = ss.str();
+
+        if (str.size() > 1)
+        {
+            result.insert(result.end(), str.begin(), str.end());
+        }
     }
 
     return result;
@@ -145,7 +153,7 @@ std::string Decode(const std::string& data)
         return res;
     }
     /// Single byte decoding
-    else if (data.size() == 2)
+    else if (data.size() == 1 || data.size() == 2)
     {
         res.append(data.begin(), data.end());
     }
