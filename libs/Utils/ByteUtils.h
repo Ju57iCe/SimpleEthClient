@@ -140,12 +140,12 @@ uint64_t GetIntFromBytes(uint32_t size_length, const std::string& data)
     uint64_t str_size = 0;
     if (size_length == 1)
     {
-        str_size = Utils::Hex::uint8_from_hex(data[3], data[4]);
+        str_size = Utils::Hex::uint8_from_hex(data[2], data[3]);
     }
     else if (size_length == sizeof(uint16_t))
     {
-        uint8_t first_byte = Utils::Hex::uint8_from_hex(data[3], data[4]);
-        uint8_t second_byte = Utils::Hex::uint8_from_hex(data[5], data[6]);
+        uint8_t first_byte = Utils::Hex::uint8_from_hex(data[2], data[3]);
+        uint8_t second_byte = Utils::Hex::uint8_from_hex(data[4], data[5]);
 
         str_size = Utils::Byte::uint16FromBytes({first_byte, second_byte});
     }

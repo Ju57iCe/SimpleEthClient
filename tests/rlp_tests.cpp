@@ -32,41 +32,45 @@ TEST(RLP, SingleLetterString)
     ASSERT_EQ(str, "A");
 }
 
-// TEST(RLP, ShortString)
-// {
-//     std::vector<uint8_t> bytes = Utils::RLP::Encode(std::string("doge"));
+TEST(RLP, ShortString)
+{
+    std::string nibbles = Utils::RLP::Encode(std::string("doge"));
 
-//     EXPECT_EQ(bytes.size(), 5);
-//     EXPECT_EQ(bytes[0], 132);
-//     EXPECT_EQ(bytes[1], 100);
-//     EXPECT_EQ(bytes[2], 111);
-//     EXPECT_EQ(bytes[3], 103);
-//     EXPECT_EQ(bytes[4], 101);
+    EXPECT_EQ(nibbles.size(), 6);
+    EXPECT_EQ(nibbles[0], '8');
+    EXPECT_EQ(nibbles[1], '4');
+    EXPECT_EQ(nibbles[2], 'd');
+    EXPECT_EQ(nibbles[3], 'o');
+    EXPECT_EQ(nibbles[4], 'g');
+    EXPECT_EQ(nibbles[5], 'e');
 
-//     std::string str = Utils::RLP::Decode(bytes);
-//     ASSERT_EQ(str, "doge");
-// }
+    std::string str = Utils::RLP::Decode(nibbles);
+    ASSERT_EQ(str, "doge");
+}
 
-// TEST(RLP, LongString)
-// {
-//     std::string initial_str(1024, 'A');
-//     std::vector<uint8_t> bytes = Utils::RLP::Encode(initial_str);
+TEST(RLP, LongString)
+{
+    std::string initial_str(1024, 'A');
+    std::string nibbles = Utils::RLP::Encode(initial_str);
 
-//     EXPECT_EQ(bytes.size(), 3 + 1024);
-//     EXPECT_EQ(bytes[0], 185);
-//     EXPECT_EQ(bytes[1], 4);
-//     EXPECT_EQ(bytes[2], 0);
+    EXPECT_EQ(nibbles.size(), 6 + 1024);
+    EXPECT_EQ(nibbles[0], 'b');
+    EXPECT_EQ(nibbles[1], '9');
+    EXPECT_EQ(nibbles[2], '0');
+    EXPECT_EQ(nibbles[3], '4');
+    EXPECT_EQ(nibbles[4], '0');
+    EXPECT_EQ(nibbles[5], '0');
 
-//     std::string str = Utils::RLP::Decode(bytes);
-//     ASSERT_EQ(str, initial_str);
-// }
+    std::string str = Utils::RLP::Decode(nibbles);
+    ASSERT_EQ(str, initial_str);
+}
 
 // TEST(RLP, ReallyLongString)
 // {
 //     std::string initial_str(131126, 'A');
 //     std::vector<uint8_t> bytes = Utils::RLP::Encode(initial_str);
 
-//     EXPECT_EQ(bytes.size(), 4 + 131126);
+//     EXPECT_EQ(bytes.size(), 8 + 131126);
 //     EXPECT_EQ(bytes[0], 186);
 //     EXPECT_EQ(bytes[1], 2);
 //     EXPECT_EQ(bytes[2], 0);
@@ -76,31 +80,37 @@ TEST(RLP, SingleLetterString)
 //     ASSERT_EQ(str, initial_str);
 // }
 
-// TEST(RLP, EmptyStringList)
-// {
-//     std::vector<std::string> list;
-//     std::vector<uint8_t> bytes = Utils::RLP::Encode(list);
-//     EXPECT_EQ(bytes[0], 192);
+TEST(RLP, EmptyStringList)
+{
+    std::vector<std::string> list;
+    std::string bytes = Utils::RLP::Encode(list);
+    EXPECT_EQ(bytes[0], 'c');
+    EXPECT_EQ(bytes[1], '0');
 
-//     std::vector<std::string> decoded_list = Utils::RLP::DecodeList(bytes);
-//     EXPECT_EQ(decoded_list.size(), 0);
-// }
+    std::vector<std::string> decoded_list = Utils::RLP::DecodeList(bytes);
+    EXPECT_EQ(decoded_list.size(), 0);
+}
 
-// TEST(RLP, ShortStringList)
-// {
-//     std::vector<std::string> list;
-//     list.emplace_back("cat");
-//     list.emplace_back("dog");
-//     std::vector<uint8_t> bytes = Utils::RLP::Encode(list);
-//     EXPECT_EQ(bytes[0], 200);
-//     EXPECT_EQ(bytes[1], 131);
-//     EXPECT_EQ(bytes[5], 131);
+TEST(RLP, ShortStringList)
+{
+    std::vector<std::string> list;
+    list.emplace_back("cat");
+    list.emplace_back("dog");
+    std::string bytes = Utils::RLP::Encode(list);
+    EXPECT_EQ(bytes[0], 'c');
+    EXPECT_EQ(bytes[1], '8');
 
-//     std::vector<std::string> decoded_list = Utils::RLP::DecodeList(bytes);
-//     EXPECT_EQ(decoded_list.size(), 2);
-//     EXPECT_EQ(decoded_list[0], "cat");
-//     EXPECT_EQ(decoded_list[1], "dog");
-// }
+    EXPECT_EQ(bytes[2], '8');
+    EXPECT_EQ(bytes[3], '3');
+
+    EXPECT_EQ(bytes[7], '8');
+    EXPECT_EQ(bytes[8], '3');
+
+    std::vector<std::string> decoded_list = Utils::RLP::DecodeList(bytes);
+    EXPECT_EQ(decoded_list.size(), 2);
+    EXPECT_EQ(decoded_list[0], "cat");
+    EXPECT_EQ(decoded_list[1], "dog");
+}
 
 // TEST(RLP, LongStringList)
 // {

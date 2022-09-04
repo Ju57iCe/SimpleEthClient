@@ -11,4 +11,6 @@ static constexpr uint8_t LONG_LIST_PREFIX = 247;       // 247 dec == 0xf7
 
 static constexpr uint8_t SHORT_STRING_MAX_WIDTH = 55;
 static constexpr uint8_t SHORT_LIST_MAX_SIZE = 55;
+
+static constexpr uint8_t PREFIX_LENGTH = 2;
 }
