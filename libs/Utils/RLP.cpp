@@ -58,7 +58,7 @@ item_properties get_item_size_from_data(const std::string& data, uint32_t offset
     }
     else
     {
-        res.length_in_nibbles = prefix_uint8 - Utils::RLP::LONG_LIST_PREFIX;
+        res.length_in_nibbles = (prefix_uint8 - Utils::RLP::LONG_LIST_PREFIX) * 2;
 
         uint64_t size_in_bytes;
         if (res.length_in_nibbles % 2 == 0)
@@ -124,16 +124,27 @@ std::string generate_string_prefix(const std::string& str)
     return prefix_res;
 }
 
-std::vector<uint8_t> generate_long_list_prefix(uint32_t length)
+std::string generate_long_list_prefix(uint32_t length)
 {
-    std::vector<uint8_t> res;
+    std::string res;
     uint8_t container_bytes = Utils::Byte::BytesToFit(length);
 
     std::vector<uint8_t> container_size_vec = Utils::Byte::ToBytes(length);
     Utils::Byte::TrimLeadingZeroBytes(container_size_vec);
 
-    res.emplace_back(Utils::RLP::LONG_LIST_PREFIX + container_bytes);
-    res.insert(res.end(), container_size_vec.begin(), container_size_vec.end());
+    res = Utils::Hex::int_to_hex_str(Utils::RLP::LONG_LIST_PREFIX + container_bytes);
+
+    std::string size_string;
+    for (auto& i : container_size_vec)
+    {
+        std::string s = Utils::Hex::int_to_hex_str(i);
+
+        if(s.size() == 1)
+            size_string.insert(size_string.end(), '0');
+        size_string.append(s);
+    }
+
+    res.insert(res.end(), size_string.begin(), size_string.end());
 
     return res;
 }
@@ -200,29 +211,16 @@ std::string Encode(const std::vector<std::string>& strings)
         }
         else
         {
-            uint64_t size = Utils::Byte::GetIntFromBytes(props.length_in_nibbles, strings_data.back()) + 1; // 1 byte is the prefix
+            uint64_t size = Utils::Byte::GetIntFromBytes(props.length_in_nibbles / 2, strings_data.back()) + 2; // 1 byte is the prefix
             total_size += size;
         }
     }
 
     std::string prefix_str;
     if (total_size <= Utils::RLP::SHORT_LIST_MAX_SIZE)
-    {
         result = Utils::Hex::int_to_hex_str(Utils::RLP::SHORT_LIST_PREFIX + total_size);
-    }
     else
-    {
-        std::vector<uint8_t> prefix = generate_long_list_prefix(total_size);
-
-        for (auto& i : prefix)
-        {
-            std::string s = Utils::Hex::int_to_hex_str(i);
-
-            if(s.size() == 1)
-                result.insert(result.end(), '0');
-            result.append(s);
-        }
-    }
+        result = generate_long_list_prefix(total_size);
 
     for (auto& str_data : strings_data)
         result.insert(result.end(), str_data.begin(), str_data.end());
@@ -245,8 +243,14 @@ std::vector<std::string> DecodeList(const std::string& data)
 
     while(nibbles_to_process != processed_nibbles)
     {
-        uint32_t prefix_and_bytes_count = data[processed_nibbles] <= LONG_STRING_PREFIX ? PREFIX_LENGTH :
-                                            PREFIX_LENGTH + (data[processed_nibbles] - LONG_STRING_PREFIX) * PREFIX_LENGTH;
+        uint32_t prefix_and_bytes_count;
+
+        uint8_t prefix = Utils::Hex::uint8_from_hex(data[processed_nibbles],
+                                                    data[processed_nibbles+1]);
+        if (prefix <= LONG_STRING_PREFIX)
+            prefix_and_bytes_count = PREFIX_LENGTH;
+        else
+            prefix_and_bytes_count = PREFIX_LENGTH + ((prefix - LONG_STRING_PREFIX) * 2);
 
         std::string string_data(data.begin() + processed_nibbles, data.end()); // ToDo - inefficient!!!
         result.emplace_back(Decode(string_data));
@@ -257,29 +261,29 @@ std::vector<std::string> DecodeList(const std::string& data)
     return result;
 }
 
-std::vector<uint8_t> Encode(const std::any& input)
+std::string Encode(const std::any& input)
 {
-    std::vector<uint8_t> result;
+    std::string result;
 
     if(input.type() == typeid(std::vector<std::string>))
     {
         std::vector<std::string> nested_list = std::any_cast<std::vector<std::string>>(input);
-        //result = Encode(nested_list);
+        result = Encode(nested_list);
     }
     else if (input.type() == typeid(std::string))
     {
         std::string str = std::any_cast<std::string>(input);
-        // result = Encode(str);
+        result = Encode(str);
     }
     else if (input.type() == typeid(std::vector<std::any>))
     {
         std::vector<std::any> any_vec = std::any_cast<std::vector<std::any>>(input);
 
         uint32_t list_total_size = 0;
-        std::vector<std::vector<uint8_t>> list_data;
+        std::vector<std::string> list_data;
         for (uint32_t i = 0; i < any_vec.size(); ++i)
         {
-            std::vector<uint8_t> list_item_data = Encode(any_vec[i]);
+            std::string list_item_data = Encode(any_vec[i]);
             list_data.push_back(list_item_data);
 
             list_total_size += list_item_data.size();
@@ -288,16 +292,15 @@ std::vector<uint8_t> Encode(const std::any& input)
         list_total_size /= 2;
         if (list_total_size == 0)
         {
-            result.emplace_back(Utils::RLP::SHORT_LIST_PREFIX);
+            result = Utils::Hex::int_to_hex_str(Utils::RLP::SHORT_LIST_PREFIX);
         }
         else if (list_total_size <= Utils::RLP::SHORT_LIST_MAX_SIZE)
         {
-            result.emplace_back(Utils::RLP::SHORT_LIST_PREFIX + list_total_size);
+            result = Utils::Hex::int_to_hex_str(Utils::RLP::SHORT_LIST_PREFIX + list_total_size);
         }
         else
         {
-            std::vector<uint8_t> prefix = generate_long_list_prefix(list_total_size);
-            result.insert(result.end(), prefix.begin(), prefix.end());
+            result = generate_long_list_prefix(list_total_size);
         }
 
         for (auto& list_item_data : list_data)
@@ -307,111 +310,114 @@ std::vector<uint8_t> Encode(const std::any& input)
     return result;
 }
 
-std::any DecodeAny(std::vector<uint8_t>& data)
+std::any DecodeAny(const std::string& data)
 {
     std::any result;
-    // std::vector<std::any> list_results;
-    // std::vector<std::string> string_results;
+    std::vector<std::any> list_results;
+    std::vector<std::string> string_results;
 
-    // if (data.empty())
-    // {
-    //     return result;
-    // }
-    // else if (data.size() == 1 && data[0] == Utils::RLP::SHORT_STRING_PREFIX)
-    // {
-    //     result = std::string();
-    //     return result;
-    // }
-    // else if (data.size() == 1 && data[0] == Utils::RLP::SHORT_LIST_PREFIX)
-    // {
-    //     result = std::vector<std::string>();
-    //     return result;
-    // }
+    uint8_t prefix = Utils::Hex::uint8_from_hex(data[0],
+                                            data[1]);
 
-    // item_properties list_props = get_item_size_from_data(data);
+    if (data.empty())
+    {
+        return result;
+    }
+    else if (data.size() == 2 && prefix == Utils::RLP::SHORT_STRING_PREFIX)
+    {
+        result = std::string();
+        return result;
+    }
+    else if (data.size() == 2 && prefix == Utils::RLP::SHORT_LIST_PREFIX)
+    {
+        result = std::vector<std::string>();
+        return result;
+    }
 
-    // uint32_t bytes_to_process = 0;
-    // uint32_t processed_bytes = 0;
-    // if (data[0] < Utils::RLP::SHORT_LIST_PREFIX)
-    // {
-    //     bytes_to_process = 1 + list_props.length_in_bytes + list_props.size;
-    //     processed_bytes = 0;
-    // }
-    // else
-    // {
-    //     bytes_to_process = data.size();
-    //     processed_bytes = bytes_to_process - (bytes_to_process - 1 - list_props.length_in_bytes);
-    // }
+    item_properties list_props = get_item_size_from_data(data);
+
+    uint32_t nibbles_to_process = 0;
+    uint32_t processed_bytes = 0;
+    if (prefix < Utils::RLP::SHORT_LIST_PREFIX)
+    {
+        nibbles_to_process = PREFIX_LENGTH + list_props.length_in_nibbles + list_props.size;
+        processed_bytes = 0;
+    }
+    else
+    {
+        nibbles_to_process = data.size();
+        processed_bytes = nibbles_to_process - (nibbles_to_process - PREFIX_LENGTH - list_props.length_in_nibbles);
+    }
 
 
-    // while(bytes_to_process != processed_bytes)
-    // {
-    //     uint32_t next_item_start_offset = processed_bytes;
-    //     uint32_t prefix_and_bytes_count = 0;
-    //     uint32_t item_size = 0;
+    while(nibbles_to_process != processed_bytes)
+    {
+        uint32_t next_item_start_offset = processed_bytes;
+        uint32_t prefix_and_bytes_count = 0;
+        uint32_t item_size = 0;
 
-    //     item_properties item_props;
+        item_properties item_props;
 
-    //     if (data[next_item_start_offset] < Utils::RLP::SHORT_LIST_PREFIX)
-    //     {
-    //         item_properties string_props = get_item_size_from_data(data, next_item_start_offset);
-    //         prefix_and_bytes_count = 1 + string_props.length_in_bytes;
+        if (data[next_item_start_offset] < Utils::RLP::SHORT_LIST_PREFIX)
+        {
+            item_properties string_props = get_item_size_from_data(data, next_item_start_offset);
+            prefix_and_bytes_count = PREFIX_LENGTH + string_props.length_in_nibbles;
 
-    //         std::vector<uint8_t> string_data(data.begin() + next_item_start_offset,
-    //                                         data.begin() + next_item_start_offset + 1 + string_props.length_in_bytes + string_props.size); // ToDo - inefficient!!!
+            std::string string_data(data.begin() + next_item_start_offset,
+                                            data.begin() + next_item_start_offset + PREFIX_LENGTH + string_props.length_in_nibbles + string_props.size); // ToDo - inefficient!!!
 
-    //         std::string str_res = Decode(string_data);
-    //         item_size = str_res.size();
-    //         result = str_res;
-    //         string_results.emplace_back(str_res);
-    //     }
-    //     else
-    //     {
-    //         std::any decoded_any;
-    //         std::vector<uint8_t> list_data;
-    //         if (data[next_item_start_offset] < Utils::RLP::LONG_LIST_PREFIX)
-    //         {
-    //             uint32_t list_len = data[next_item_start_offset] - Utils::RLP::SHORT_LIST_PREFIX;
+            std::string str_res = Decode(string_data);
+            item_size = str_res.size();
+            result = str_res;
+            string_results.emplace_back(str_res);
+        }
+        else
+        {
+            std::any decoded_any;
+            std::string list_data;
+            if (data[next_item_start_offset] < Utils::RLP::LONG_LIST_PREFIX)
+            {
+                uint32_t list_len = Utils::Hex::uint8_from_hex(data[next_item_start_offset], data[next_item_start_offset+1]) - Utils::RLP::SHORT_LIST_PREFIX;
 
-    //             list_data = std::vector<uint8_t>(data.begin() + next_item_start_offset,
-    //                                             data.begin() + next_item_start_offset + 1 + list_len); // ToDo - inefficient!!!
-    //             item_size = list_len;
-    //             prefix_and_bytes_count = 1;
-    //         }
-    //         else
-    //         {
-    //             uint32_t list_len = data[next_item_start_offset] - Utils::RLP::LONG_LIST_PREFIX;
-    //             std::vector<uint8_t> size_buff = std::vector<uint8_t>(data.begin() + next_item_start_offset,
-    //                                                                     data.begin() + next_item_start_offset + 1 + list_len);
+                list_data = std::string(data.begin() + next_item_start_offset,
+                                                data.begin() + next_item_start_offset + PREFIX_LENGTH + list_len); // ToDo - inefficient!!!
+                item_size = list_len;
+                prefix_and_bytes_count = 1;
+            }
+            else
+            {
+                uint32_t list_len = Utils::Hex::uint8_from_hex(data[next_item_start_offset], data[next_item_start_offset+1]) - Utils::RLP::LONG_LIST_PREFIX;
+                std::string size_buff = std::string(data.begin() + next_item_start_offset,
+                                                                        data.begin() + next_item_start_offset + PREFIX_LENGTH + list_len);
 
-    //             uint64_t list_size = Utils::Byte::GetIntFromBytes(list_len, size_buff);
+                uint64_t list_size = Utils::Byte::GetIntFromBytes(list_len, size_buff);
 
-    //             list_data = std::vector<uint8_t>(data.begin() + next_item_start_offset + list_len + 1,
-    //                                             data.begin() + next_item_start_offset + list_len + 1 + list_size); // ToDo - inefficient!!!
-    //             item_size = list_size;
-    //             prefix_and_bytes_count = size_buff.size();
-    //         }
+                list_data = std::string(data.begin() + next_item_start_offset + list_len + 1,
+                                                data.begin() + next_item_start_offset + list_len + 1 + list_size); // ToDo - inefficient!!!
+                item_size = list_size;
+                prefix_and_bytes_count = size_buff.size();
+            }
 
-    //         decoded_any = Utils::RLP::DecodeAny(list_data);
-    //         list_results.emplace_back(decoded_any);
-    //     }
+            decoded_any = Utils::RLP::DecodeAny(list_data);
+            list_results.emplace_back(decoded_any);
+        }
 
-    //     processed_bytes += prefix_and_bytes_count + item_size;
-    // }
+        processed_bytes += prefix_and_bytes_count + item_size;
+    }
 
-    // if (list_results.empty() && string_results.empty())
-    // {
-    //     return result;
-    // }
-    // else
-    // {
-    //     std::any res;
-    //     if (!list_results.empty())
-    //         res = list_results;
-    //     else
-    //         res = string_results;
-    //     return res;
-    // }
+    if (list_results.empty() && string_results.empty())
+    {
+        return result;
+    }
+    else
+    {
+        std::any res;
+        if (!list_results.empty())
+            res = list_results;
+        else
+            res = string_results;
+        return res;
+    }
 }
 
 }
