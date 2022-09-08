@@ -147,127 +147,127 @@ TEST(RLP, ShortStringList)
     EXPECT_EQ(decoded_list[1], "dog");
 }
 
-// TEST(RLP, LongStringList)
-// {
-    // std::vector<std::string> list;
-    // list.emplace_back("catcatcatcat");
-    // list.emplace_back("dogdogdogdog");
-    // list.emplace_back("catcatcatcat");
-    // list.emplace_back("dogdogdogdog");
-    // list.emplace_back("catcatcatcat");
-    // list.emplace_back("dogdogdogdog");
-    // list.emplace_back("catcatcatcat");
-    // list.emplace_back("dogdogdogdog");
+TEST(RLP, LongStringList)
+{
+    std::vector<std::string> list;
+    list.emplace_back("catcatcatcat");
+    list.emplace_back("dogdogdogdog");
+    list.emplace_back("catcatcatcat");
+    list.emplace_back("dogdogdogdog");
+    list.emplace_back("catcatcatcat");
+    list.emplace_back("dogdogdogdog");
+    list.emplace_back("catcatcatcat");
+    list.emplace_back("dogdogdogdog");
 
-    // std::string nibbles = Utils::RLP::Encode(list);
-    // EXPECT_EQ(nibbles[0], 'f');
-    // EXPECT_EQ(nibbles[1], '8');
-    // EXPECT_EQ(nibbles[2], '6');
-    // EXPECT_EQ(nibbles[3], '8');
+    std::string nibbles = Utils::RLP::Encode(list);
+    EXPECT_EQ(nibbles[0], 'f');
+    EXPECT_EQ(nibbles[1], '8');
+    EXPECT_EQ(nibbles[2], '6');
+    EXPECT_EQ(nibbles[3], '8');
 
-    // std::vector<std::string> decoded_list = Utils::RLP::DecodeList(nibbles);
-    // EXPECT_EQ(decoded_list.size(), 8);
-    // EXPECT_EQ(decoded_list[0], "catcatcatcat");
-    // EXPECT_EQ(decoded_list[1], "dogdogdogdog");
-    // EXPECT_EQ(decoded_list[2], "catcatcatcat");
-    // EXPECT_EQ(decoded_list[3], "dogdogdogdog");
-    // EXPECT_EQ(decoded_list[4], "catcatcatcat");
-    // EXPECT_EQ(decoded_list[5], "dogdogdogdog");
-    // EXPECT_EQ(decoded_list[6], "catcatcatcat");
-    // EXPECT_EQ(decoded_list[7], "dogdogdogdog");
-// }
+    std::vector<std::string> decoded_list = Utils::RLP::DecodeList(nibbles);
+    EXPECT_EQ(decoded_list.size(), 8);
+    EXPECT_EQ(decoded_list[0], "catcatcatcat");
+    EXPECT_EQ(decoded_list[1], "dogdogdogdog");
+    EXPECT_EQ(decoded_list[2], "catcatcatcat");
+    EXPECT_EQ(decoded_list[3], "dogdogdogdog");
+    EXPECT_EQ(decoded_list[4], "catcatcatcat");
+    EXPECT_EQ(decoded_list[5], "dogdogdogdog");
+    EXPECT_EQ(decoded_list[6], "catcatcatcat");
+    EXPECT_EQ(decoded_list[7], "dogdogdogdog");
+}
 
 TEST(RLP, ShortLongStringList)
 {
-    // std::vector<std::string> list;
-    // list.emplace_back("cat");
-    // list.emplace_back("dogdogdogdog");
-    // list.emplace_back("cat");
-    // list.emplace_back("dogdogdogdog");
-    // list.emplace_back("cat");
-    // list.emplace_back("dogdogdogdog");
-    // list.emplace_back("cat");
-    // list.emplace_back("dogdogdogdog");
+    std::vector<std::string> list;
+    list.emplace_back("cat");
+    list.emplace_back("dogdogdogdog");
+    list.emplace_back("cat");
+    list.emplace_back("dogdogdogdog");
+    list.emplace_back("cat");
+    list.emplace_back("dogdogdogdog");
+    list.emplace_back("cat");
+    list.emplace_back("dogdogdogdog");
 
-    // std::string nibbles = Utils::RLP::Encode(list);
-    // EXPECT_EQ(nibbles[0], 'f');
-    // EXPECT_EQ(nibbles[1], '8');
-    // EXPECT_EQ(nibbles[2], '4');
-    // EXPECT_EQ(nibbles[3], '4');
+    std::string nibbles = Utils::RLP::Encode(list);
+    EXPECT_EQ(nibbles[0], 'f');
+    EXPECT_EQ(nibbles[1], '8');
+    EXPECT_EQ(nibbles[2], '4');
+    EXPECT_EQ(nibbles[3], '4');
 
-    // std::vector<std::string> decoded_list = Utils::RLP::DecodeList(nibbles);
-    // EXPECT_EQ(decoded_list.size(), 8);
-    // EXPECT_EQ(decoded_list[0], "cat");
-    // EXPECT_EQ(decoded_list[1], "dogdogdogdog");
-    // EXPECT_EQ(decoded_list[2], "cat");
-    // EXPECT_EQ(decoded_list[3], "dogdogdogdog");
-    // EXPECT_EQ(decoded_list[4], "cat");
-    // EXPECT_EQ(decoded_list[5], "dogdogdogdog");
-    // EXPECT_EQ(decoded_list[6], "cat");
-    // EXPECT_EQ(decoded_list[7], "dogdogdogdog");
+    std::vector<std::string> decoded_list = Utils::RLP::DecodeList(nibbles);
+    EXPECT_EQ(decoded_list.size(), 8);
+    EXPECT_EQ(decoded_list[0], "cat");
+    EXPECT_EQ(decoded_list[1], "dogdogdogdog");
+    EXPECT_EQ(decoded_list[2], "cat");
+    EXPECT_EQ(decoded_list[3], "dogdogdogdog");
+    EXPECT_EQ(decoded_list[4], "cat");
+    EXPECT_EQ(decoded_list[5], "dogdogdogdog");
+    EXPECT_EQ(decoded_list[6], "cat");
+    EXPECT_EQ(decoded_list[7], "dogdogdogdog");
 }
 
 TEST(RLP, MixedLongShortStringList)
 {
-    // std::vector<std::string> list;
-    // list.emplace_back("cat");
-    // list.emplace_back("dogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdog");
+    std::vector<std::string> list;
+    list.emplace_back("cat");
+    list.emplace_back("dogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdog");
 
-    // std::string nibbles = Utils::RLP::Encode(list);
-    // EXPECT_EQ(nibbles[0], 'f');
-    // EXPECT_EQ(nibbles[1], '8');
-    // EXPECT_EQ(nibbles[2], '5');
-    // EXPECT_EQ(nibbles[3], 'a');
+    std::string nibbles = Utils::RLP::Encode(list);
+    EXPECT_EQ(nibbles[0], 'f');
+    EXPECT_EQ(nibbles[1], '8');
+    EXPECT_EQ(nibbles[2], '5');
+    EXPECT_EQ(nibbles[3], 'a');
 
-    // std::vector<std::string> decoded_list = Utils::RLP::DecodeList(nibbles);
-    // EXPECT_EQ(decoded_list.size(), 2);
-    // EXPECT_EQ(decoded_list[0], "cat");
-    // EXPECT_EQ(decoded_list[1], "dogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdog");
+    std::vector<std::string> decoded_list = Utils::RLP::DecodeList(nibbles);
+    EXPECT_EQ(decoded_list.size(), 2);
+    EXPECT_EQ(decoded_list[0], "cat");
+    EXPECT_EQ(decoded_list[1], "dogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdogdog");
 }
 
 TEST(RLP, DecodeAnyEmptyString)
 {
-    // std::string str("");
-    // std::any any_str = std::make_any<std::string>(str);
+    std::string str("");
+    std::any any_str = std::make_any<std::string>(str);
 
-    // std::string nibbles = Utils::RLP::Encode(any_str);
-    // EXPECT_EQ(nibbles.size(), 2);
-    // EXPECT_EQ(nibbles[0], '8');
-    // EXPECT_EQ(nibbles[1], '0');
+    std::string nibbles = Utils::RLP::Encode(any_str);
+    EXPECT_EQ(nibbles.size(), 2);
+    EXPECT_EQ(nibbles[0], '8');
+    EXPECT_EQ(nibbles[1], '0');
 
-    // std::any any_res = Utils::RLP::DecodeAny(nibbles);
-    // std::string res_str = std::any_cast<std::string>(any_res);
-    // EXPECT_EQ(str.size(), res_str.size());
+    std::any any_res = Utils::RLP::DecodeAny(nibbles);
+    std::string res_str = std::any_cast<std::string>(any_res);
+    EXPECT_EQ(str.size(), res_str.size());
 }
 
 TEST(RLP, DecodeAnyEmptyList)
 {
-    // std::vector<std::string> vec;
-    // std::any any_vec = std::make_any<std::vector<std::string>>(vec);
+    std::vector<std::string> vec;
+    std::any any_vec = std::make_any<std::vector<std::string>>(vec);
 
-    // std::string nibbles = Utils::RLP::Encode(any_vec);
-    // EXPECT_EQ(nibbles.size(), 2);
-    // EXPECT_EQ(nibbles[0], 'c');
-    // EXPECT_EQ(nibbles[1], '0');
+    std::string nibbles = Utils::RLP::Encode(any_vec);
+    EXPECT_EQ(nibbles.size(), 2);
+    EXPECT_EQ(nibbles[0], 'c');
+    EXPECT_EQ(nibbles[1], '0');
 
-    // std::any any_res = Utils::RLP::DecodeAny(nibbles);
-    // std::vector<std::string> res_vec = std::any_cast<std::vector<std::string>>(any_res);
-    // EXPECT_EQ(vec.size(), res_vec.size());
+    std::any any_res = Utils::RLP::DecodeAny(nibbles);
+    std::vector<std::string> res_vec = std::any_cast<std::vector<std::string>>(any_res);
+    EXPECT_EQ(vec.size(), res_vec.size());
 }
 
 TEST(RLP, NestedShortList)
 {
-    // std::vector<std::string> vec_one = { "111" };
-    // std::vector<std::string> vec_two = { "222" };
+    std::vector<std::string> vec_one = { "111" };
+    std::vector<std::string> vec_two = { "222" };
 
-    // std::any any_vec_one = std::make_any<std::vector<std::string>>(vec_one);
-    // std::any any_vec_two = std::make_any<std::vector<std::string>>(vec_two);
+    std::any any_vec_one = std::make_any<std::vector<std::string>>(vec_one);
+    std::any any_vec_two = std::make_any<std::vector<std::string>>(vec_two);
 
-    // std::vector<std::any> nested_any_vec;
-    // nested_any_vec.push_back(any_vec_one);
-    // nested_any_vec.push_back(any_vec_two);
+    std::vector<std::any> nested_any_vec;
+    nested_any_vec.push_back(any_vec_one);
+    nested_any_vec.push_back(any_vec_two);
 
-    // std::string nibbles = Utils::RLP::Encode(nested_any_vec);
+    std::string nibbles = Utils::RLP::Encode(nested_any_vec);
 
     // EXPECT_EQ(nibbles[0], Utils::RLP::SHORT_LIST_PREFIX +
     //                     2 * sizeof(Utils::RLP::SHORT_LIST_PREFIX) +
@@ -285,19 +285,19 @@ TEST(RLP, NestedShortList)
     //                     vec_one[0].size());
     // EXPECT_EQ(bytes[7], Utils::RLP::SHORT_STRING_PREFIX + vec_two[0].size());
 
-    // std::any any_res = Utils::RLP::DecodeAny(nibbles);
+    std::any any_res = Utils::RLP::DecodeAny(nibbles);
 
-    // std::vector<std::any> any_vec_res = std::any_cast<std::vector<std::any>>(any_res);
-    // std::vector<std::string> str_vec_res_one = std::any_cast<std::vector<std::string>>(any_vec_res[0]);
-    // std::vector<std::string> str_vec_res_two = std::any_cast<std::vector<std::string>>(any_vec_res[1]);
+    std::vector<std::any> any_vec_res = std::any_cast<std::vector<std::any>>(any_res);
+    std::vector<std::string> str_vec_res_one = std::any_cast<std::vector<std::string>>(any_vec_res[0]);
+    std::vector<std::string> str_vec_res_two = std::any_cast<std::vector<std::string>>(any_vec_res[1]);
 
-    // EXPECT_EQ(vec_one.size(), str_vec_res_one.size());
-    // EXPECT_EQ(vec_one[0].size(), str_vec_res_one[0].size());
-    // EXPECT_EQ(vec_one[0], str_vec_res_one[0]);
+    EXPECT_EQ(vec_one.size(), str_vec_res_one.size());
+    EXPECT_EQ(vec_one[0].size(), str_vec_res_one[0].size());
+    EXPECT_EQ(vec_one[0], str_vec_res_one[0]);
 
-    // EXPECT_EQ(vec_two.size(), str_vec_res_two.size());
-    // EXPECT_EQ(vec_two[0].size(), str_vec_res_two[0].size());
-    // EXPECT_EQ(vec_two[0], str_vec_res_two[0]);
+    EXPECT_EQ(vec_two.size(), str_vec_res_two.size());
+    EXPECT_EQ(vec_two[0].size(), str_vec_res_two[0].size());
+    EXPECT_EQ(vec_two[0], str_vec_res_two[0]);
 }
 
 // TEST(RLP, NestedLongList)
