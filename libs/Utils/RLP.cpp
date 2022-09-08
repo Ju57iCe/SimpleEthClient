@@ -8,6 +8,7 @@
 #include <iomanip>
 #include <string>
 #include <iostream>
+#include <algorithm>
 
 namespace
 {
@@ -153,37 +154,52 @@ std::string Encode(const std::string& str)
 {
     std::string result = generate_string_prefix(str);
 
+    std::string hex_str = Utils::Hex::ascii_string_to_hex_string(str);
     if (str.size() >= 1)
-        result.insert(result.end(), str.begin(), str.end());
+        result.insert(result.end(), hex_str.begin(), hex_str.end());
 
     return result;
 }
 
-std::string Decode(const std::string& data)
+std::string Decode(const std::string& input)
 {
+    std::string data = input;
+    std::transform(data.begin(), data.end(), data.begin(), ::tolower);
+
     std::string res;
+    std::string hex_string;
     /// Empty string decoding
     if (data.size() == 0 ||
-        (data.size() == 2 && data[0] == Utils::RLP::SHORT_STRING_PREFIX))
+        (data.size() == 2 &&
+            (Utils::Hex::uint8_from_hex(data[0], data[1]) == Utils::RLP::SHORT_STRING_PREFIX)))
     {
         return res;
     }
     /// Single byte decoding
     else if (data.size() == 1 || data.size() == 2)
     {
-        res.append(data.begin(), data.end());
+        if (data.size() == 1)
+            res.insert(res.begin(), Utils::Hex::uint8_from_hex(0, data[0]));
+        else
+            res.insert(res.begin(), Utils::Hex::uint8_from_hex(data[0], data[1]));
     }
     else
     {
         item_properties string_props = get_item_size_from_data(data);
-        res.reserve(string_props.size);
+        hex_string.reserve(string_props.size * 2); // size is in bytes, but we are reserving space for nibbles
 
         if (string_props.length_in_nibbles == 0) // Short string decoding
-            res = std::string(data.begin() + Utils::RLP::PREFIX_LENGTH,
-                                data.begin() + Utils::RLP::PREFIX_LENGTH + string_props.size);
+            hex_string = std::string(data.begin() + Utils::RLP::PREFIX_LENGTH,
+                                data.begin() + Utils::RLP::PREFIX_LENGTH + string_props.size * 2);
         else // Long string decoding
-            res = std::string(data.begin() + Utils::RLP::PREFIX_LENGTH + string_props.length_in_nibbles,
-                                data.begin() + Utils::RLP::PREFIX_LENGTH + string_props.length_in_nibbles + string_props.size);
+            hex_string = std::string(data.begin() + Utils::RLP::PREFIX_LENGTH + string_props.length_in_nibbles,
+                                data.begin() + Utils::RLP::PREFIX_LENGTH + string_props.length_in_nibbles + string_props.size * 2);
+    }
+
+    if (!hex_string.empty())
+    {
+        std::string ascii_str = Utils::Hex::hex_string_to_ascii_string(hex_string);
+        res.append(ascii_str.begin(), ascii_str.end());
     }
 
     return res;
@@ -252,10 +268,14 @@ std::vector<std::string> DecodeList(const std::string& data)
         else
             prefix_and_bytes_count = PREFIX_LENGTH + ((prefix - LONG_STRING_PREFIX) * 2);
 
-        std::string string_data(data.begin() + processed_nibbles, data.end()); // ToDo - inefficient!!!
+        item_properties item_props = get_item_size_from_data(data.substr(processed_nibbles, data.size()));
+
+        size_t item_buffer_size = prefix_and_bytes_count + item_props.length_in_nibbles + item_props.size * 2;
+        std::string string_data(data.begin() + processed_nibbles,
+                                data.begin() + processed_nibbles + item_buffer_size);
         result.emplace_back(Decode(string_data));
 
-        processed_nibbles += prefix_and_bytes_count + result.back().size();
+        processed_nibbles += item_buffer_size;
     }
 
     return result;
@@ -283,13 +303,20 @@ std::string Encode(const std::any& input)
         std::vector<std::string> list_data;
         for (uint32_t i = 0; i < any_vec.size(); ++i)
         {
-            std::string list_item_data = Encode(any_vec[i]);
-            list_data.push_back(list_item_data);
+            list_data.emplace_back(Encode(any_vec[i]));
+            item_properties props = get_item_size_from_data(list_data.back());
 
-            list_total_size += list_item_data.size();
+            if (props.length_in_nibbles == 0)
+            {
+                list_total_size += props.size + 1; // 1 byte is the prefix
+            }
+            else
+            {
+                uint64_t size = Utils::Byte::GetIntFromBytes(props.length_in_nibbles / 2, list_data.back()) + 2; // 1 byte is the prefix
+                list_total_size += size;
+            }
         }
 
-        list_total_size /= 2;
         if (list_total_size == 0)
         {
             result = Utils::Hex::int_to_hex_str(Utils::RLP::SHORT_LIST_PREFIX);
@@ -358,7 +385,9 @@ std::any DecodeAny(const std::string& data)
 
         item_properties item_props;
 
-        if (data[next_item_start_offset] < Utils::RLP::SHORT_LIST_PREFIX)
+        uint8_t prefix = Utils::Hex::uint8_from_hex(data[next_item_start_offset],
+                                                    data[next_item_start_offset+1]);
+        if (prefix < Utils::RLP::SHORT_LIST_PREFIX)
         {
             item_properties string_props = get_item_size_from_data(data, next_item_start_offset);
             prefix_and_bytes_count = PREFIX_LENGTH + string_props.length_in_nibbles;
@@ -375,7 +404,7 @@ std::any DecodeAny(const std::string& data)
         {
             std::any decoded_any;
             std::string list_data;
-            if (data[next_item_start_offset] < Utils::RLP::LONG_LIST_PREFIX)
+            if (prefix < Utils::RLP::LONG_LIST_PREFIX)
             {
                 uint32_t list_len = Utils::Hex::uint8_from_hex(data[next_item_start_offset], data[next_item_start_offset+1]) - Utils::RLP::SHORT_LIST_PREFIX;
 

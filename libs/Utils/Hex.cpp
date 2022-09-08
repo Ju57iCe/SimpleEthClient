@@ -31,13 +31,30 @@ std::string nibbles_to_hex_str(const std::vector<uint8_t>& nibbles)
     return stream.str();
 }
 
-std::string ASCIIStringToHexString(const std::string& str)
+std::string ascii_string_to_hex_string(const std::string& str)
 {
     std::ostringstream result;
-    result << std::setw(2) << std::setfill('0') << std::hex << std::uppercase;
+    result << std::setw(2) << std::setfill('0') << std::hex;
     std::copy(str.begin(), str.end(), std::ostream_iterator<unsigned int>(result, ""));
 
     return result.str();
+}
+
+std::string hex_string_to_ascii_string(const std::string& str)
+{
+    std::string str_copy = str;
+    std::string res;
+    if (str_copy.size() % 2 != 0)
+        str_copy.insert(str_copy.begin(), '0');
+
+    for (size_t i = 0; i < str_copy.length(); i += 2)
+    {
+        std::string part = str_copy.substr(i, 2);
+        char ch = stoul(part, nullptr, 16);
+        res += ch;
+    }
+
+    return res;
 }
 
 std::vector<uint8_t> string_to_hex_vector(const std::string& str)
