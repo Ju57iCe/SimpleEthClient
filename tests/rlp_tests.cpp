@@ -269,21 +269,20 @@ TEST(RLP, NestedShortList)
 
     std::string nibbles = Utils::RLP::Encode(nested_any_vec);
 
-    // EXPECT_EQ(nibbles[0], Utils::RLP::SHORT_LIST_PREFIX +
-    //                     2 * sizeof(Utils::RLP::SHORT_LIST_PREFIX) +
-    //                     2 * sizeof(Utils::RLP::SHORT_STRING_PREFIX) +
-    //                     vec_one[0].size() +
-    //                     vec_two[0].size());
+    EXPECT_EQ(nibbles[0], 'c');
+    EXPECT_EQ(nibbles[1], 'a');
 
-    // EXPECT_EQ(bytes[1], Utils::RLP::SHORT_LIST_PREFIX +
-    //                     sizeof(Utils::RLP::SHORT_LIST_PREFIX) +
-    //                     vec_one[0].size());
-    // EXPECT_EQ(bytes[2], Utils::RLP::SHORT_STRING_PREFIX + vec_one[0].size());
+    EXPECT_EQ(nibbles[2], 'c');
+    EXPECT_EQ(nibbles[3], '4');
 
-    // EXPECT_EQ(bytes[6], Utils::RLP::SHORT_LIST_PREFIX +
-    //                     sizeof(Utils::RLP::SHORT_LIST_PREFIX) +
-    //                     vec_one[0].size());
-    // EXPECT_EQ(bytes[7], Utils::RLP::SHORT_STRING_PREFIX + vec_two[0].size());
+    EXPECT_EQ(nibbles[4], '8');
+    EXPECT_EQ(nibbles[5], '3');
+
+    EXPECT_EQ(nibbles[12], 'c');
+    EXPECT_EQ(nibbles[13], '4');
+
+    EXPECT_EQ(nibbles[14], '8');
+    EXPECT_EQ(nibbles[15], '3');
 
     std::any any_res = Utils::RLP::DecodeAny(nibbles);
 
@@ -300,55 +299,61 @@ TEST(RLP, NestedShortList)
     EXPECT_EQ(vec_two[0], str_vec_res_two[0]);
 }
 
-// TEST(RLP, NestedLongList)
-// {
-//     std::vector<std::string> vec_one = { "11111111111111111111111111111111111111111111111111111111" };
-//     std::vector<std::string> vec_two = { "22222222222222222222222222222222222222222222222222222222" };
+TEST(RLP, NestedLongList)
+{
+    std::vector<std::string> vec_one = { "11111111111111111111111111111111111111111111111111111111" };
+    std::vector<std::string> vec_two = { "22222222222222222222222222222222222222222222222222222222" };
 
-//     std::any any_vec_one = std::make_any<std::vector<std::string>>(vec_one);
-//     std::any any_vec_two = std::make_any<std::vector<std::string>>(vec_two);
+    std::any any_vec_one = std::make_any<std::vector<std::string>>(vec_one);
+    std::any any_vec_two = std::make_any<std::vector<std::string>>(vec_two);
 
-//     std::vector<std::any> nested_any_vec;
-//     nested_any_vec.push_back(any_vec_one);
-//     nested_any_vec.push_back(any_vec_two);
+    std::vector<std::any> nested_any_vec;
+    nested_any_vec.push_back(any_vec_one);
+    nested_any_vec.push_back(any_vec_two);
 
-//     std::vector<uint8_t> bytes = Utils::RLP::Encode(nested_any_vec);
+    std::string nibbles = Utils::RLP::Encode(nested_any_vec);
 
-//     EXPECT_EQ(bytes[0], Utils::RLP::LONG_LIST_PREFIX + 1);
+    EXPECT_EQ(nibbles[0], 'f');
+    EXPECT_EQ(nibbles[1], '8');
 
-//     uint8_t expected_size = 2 * sizeof(Utils::RLP::LONG_LIST_PREFIX) +
-//                             2 * 1 +  // 2 bytes length of size of lists
-//                             2 * sizeof(Utils::RLP::LONG_STRING_PREFIX) +
-//                             2 * 1 +  // 2 bytes length of size of strings
-//                             vec_one[0].size() + vec_two[0].size();
-//     EXPECT_EQ(bytes[1], expected_size);
+    EXPECT_EQ(nibbles[2], '7');
+    EXPECT_EQ(nibbles[3], '8');
 
-//     EXPECT_EQ(bytes[2], Utils::RLP::LONG_LIST_PREFIX + 1);
-//     EXPECT_EQ(bytes[3], sizeof(Utils::RLP::LONG_STRING_PREFIX) +
-//                         1 +
-//                         vec_one[0].size());
-//     EXPECT_EQ(bytes[4], Utils::RLP::LONG_STRING_PREFIX + 1);
-//     EXPECT_EQ(bytes[5], vec_one[0].size());
+    EXPECT_EQ(nibbles[4], 'f');
+    EXPECT_EQ(nibbles[5], '8');
 
+    EXPECT_EQ(nibbles[6], '3');
+    EXPECT_EQ(nibbles[7], 'a');
 
-//     EXPECT_EQ(bytes[62], Utils::RLP::LONG_LIST_PREFIX + 1);
-//     EXPECT_EQ(bytes[63], sizeof(Utils::RLP::LONG_STRING_PREFIX) +
-//                         1 +
-//                         vec_two[0].size());
-//     EXPECT_EQ(bytes[64], Utils::RLP::LONG_STRING_PREFIX + 1);
-//     EXPECT_EQ(bytes[65], vec_two[0].size());
+    EXPECT_EQ(nibbles[8], 'b');
+    EXPECT_EQ(nibbles[9], '8');
 
-//     std::any any_res = Utils::RLP::DecodeAny(bytes);
+    EXPECT_EQ(nibbles[10], '3');
+    EXPECT_EQ(nibbles[11], '8');
 
-//     std::vector<std::any> any_vec_res = std::any_cast<std::vector<std::any>>(any_res);
-//     std::vector<std::string> str_vec_res_one = std::any_cast<std::vector<std::string>>(any_vec_res[0]);
-//     std::vector<std::string> str_vec_res_two = std::any_cast<std::vector<std::string>>(any_vec_res[1]);
+    EXPECT_EQ(nibbles[124], 'f');
+    EXPECT_EQ(nibbles[125], '8');
 
-//     EXPECT_EQ(vec_one.size(), str_vec_res_one.size());
-//     EXPECT_EQ(vec_one[0].size(), str_vec_res_one[0].size());
-//     EXPECT_EQ(vec_one[0], str_vec_res_one[0]);
+    EXPECT_EQ(nibbles[126], '3');
+    EXPECT_EQ(nibbles[127], 'a');
 
-//     EXPECT_EQ(vec_two.size(), str_vec_res_two.size());
-//     EXPECT_EQ(vec_two[0].size(), str_vec_res_two[0].size());
-//     EXPECT_EQ(vec_two[0], str_vec_res_two[0]);
-// }
+    EXPECT_EQ(nibbles[128], 'b');
+    EXPECT_EQ(nibbles[129], '8');
+
+    EXPECT_EQ(nibbles[130], '3');
+    EXPECT_EQ(nibbles[131], '8');
+
+    std::any any_res = Utils::RLP::DecodeAny(nibbles);
+
+    std::vector<std::any> any_vec_res = std::any_cast<std::vector<std::any>>(any_res);
+    std::vector<std::string> str_vec_res_one = std::any_cast<std::vector<std::string>>(any_vec_res[0]);
+    std::vector<std::string> str_vec_res_two = std::any_cast<std::vector<std::string>>(any_vec_res[1]);
+
+    EXPECT_EQ(vec_one.size(), str_vec_res_one.size());
+    EXPECT_EQ(vec_one[0].size(), str_vec_res_one[0].size());
+    EXPECT_EQ(vec_one[0], str_vec_res_one[0]);
+
+    EXPECT_EQ(vec_two.size(), str_vec_res_two.size());
+    EXPECT_EQ(vec_two[0].size(), str_vec_res_two[0].size());
+    EXPECT_EQ(vec_two[0], str_vec_res_two[0]);
+}

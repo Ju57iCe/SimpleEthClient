@@ -388,10 +388,10 @@ std::any DecodeAny(const std::string& data)
             prefix_and_bytes_count = PREFIX_LENGTH + string_props.length_in_nibbles;
 
             std::string string_data(data.begin() + next_item_start_offset,
-                                            data.begin() + next_item_start_offset + PREFIX_LENGTH + string_props.length_in_nibbles + string_props.size); // ToDo - inefficient!!!
+                                            data.begin() + next_item_start_offset + PREFIX_LENGTH + string_props.length_in_nibbles + string_props.size * 2);
 
             std::string str_res = Decode(string_data);
-            item_size = str_res.size();
+            item_size = str_res.size() * 2;
             result = str_res;
             string_results.emplace_back(str_res);
         }
@@ -417,9 +417,9 @@ std::any DecodeAny(const std::string& data)
 
                 uint64_t list_size = Utils::Byte::GetIntFromBytes(list_len, size_buff);
 
-                list_data = std::string(data.begin() + next_item_start_offset + list_len + 1,
-                                                data.begin() + next_item_start_offset + list_len + 1 + list_size); // ToDo - inefficient!!!
-                item_size = list_size;
+                list_data = std::string(data.begin() + next_item_start_offset,
+                                                data.begin() + next_item_start_offset + PREFIX_LENGTH  + list_len * 2 + list_size * 2);
+                item_size = list_size * 2;
                 prefix_and_bytes_count = size_buff.size();
             }
 
