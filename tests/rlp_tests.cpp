@@ -25,9 +25,8 @@ TEST(RLP, SingleLetterString)
 {
     std::string nibbles = Utils::RLP::Encode(std::string("A"));
 
-    EXPECT_EQ(nibbles.size(), 2);
-    EXPECT_EQ(nibbles[0], '4');
-    EXPECT_EQ(nibbles[1], '1');
+    EXPECT_EQ(nibbles.size(), 1);
+    EXPECT_EQ(nibbles[0], 'A');
 
     std::string str = Utils::RLP::Decode(nibbles);
     ASSERT_EQ(str, "A");
@@ -37,21 +36,15 @@ TEST(RLP, ShortString)
 {
     std::string nibbles = Utils::RLP::Encode(std::string("doge"));
 
-    EXPECT_EQ(nibbles.size(), 10);
+    EXPECT_EQ(nibbles.size(), 6);
     EXPECT_EQ(nibbles[0], '8');
     EXPECT_EQ(nibbles[1], '4');
 
-    EXPECT_EQ(nibbles[2], '6');
-    EXPECT_EQ(nibbles[3], '4');
+    EXPECT_EQ(nibbles[2], 'd');
+    EXPECT_EQ(nibbles[3], 'o');
 
-    EXPECT_EQ(nibbles[4], '6');
-    EXPECT_EQ(nibbles[5], 'f');
-
-    EXPECT_EQ(nibbles[6], '6');
-    EXPECT_EQ(nibbles[7], '7');
-
-    EXPECT_EQ(nibbles[8], '6');
-    EXPECT_EQ(nibbles[9], '5');
+    EXPECT_EQ(nibbles[4], 'g');
+    EXPECT_EQ(nibbles[5], 'e');
 
     std::string str = Utils::RLP::Decode(nibbles);
     ASSERT_EQ(str, "doge");
@@ -63,7 +56,7 @@ TEST(RLP, LongString)
     std::string initial_str(str_size, 'A');
     std::string nibbles = Utils::RLP::Encode(initial_str);
 
-    EXPECT_EQ(nibbles.size(), 6 + str_size * 2);
+    EXPECT_EQ(nibbles.size(), 6 + str_size);
     EXPECT_EQ(nibbles[0], 'b');
     EXPECT_EQ(nibbles[1], '9');
 
@@ -72,11 +65,10 @@ TEST(RLP, LongString)
     EXPECT_EQ(nibbles[4], '0');
     EXPECT_EQ(nibbles[5], '0');
 
-    EXPECT_EQ(nibbles[6], '4');
-    EXPECT_EQ(nibbles[7], '1');
+    EXPECT_EQ(nibbles[6], 'A');
 
-    EXPECT_EQ(nibbles[nibbles.size()-2], '4');
-    EXPECT_EQ(nibbles[nibbles.size()-1], '1');
+    EXPECT_EQ(nibbles[nibbles.size()-2], 'A');
+    EXPECT_EQ(nibbles[nibbles.size()-1], 'A');
 
     std::string str = Utils::RLP::Decode(nibbles);
     ASSERT_EQ(str, initial_str);
@@ -88,7 +80,7 @@ TEST(RLP, ReallyLongString)
     std::string initial_str(str_size, 'A');
     std::string nibbles = Utils::RLP::Encode(initial_str);
 
-    EXPECT_EQ(nibbles.size(), 8 + str_size * 2);
+    EXPECT_EQ(nibbles.size(), 8 + str_size);
     EXPECT_EQ(nibbles[0], 'b');
     EXPECT_EQ(nibbles[1], 'a');
 
@@ -99,11 +91,11 @@ TEST(RLP, ReallyLongString)
     EXPECT_EQ(nibbles[6], '3');
     EXPECT_EQ(nibbles[7], '6');
 
-    EXPECT_EQ(nibbles[8], '4');
-    EXPECT_EQ(nibbles[9], '1');
+    EXPECT_EQ(nibbles[8], 'A');
+    EXPECT_EQ(nibbles[9], 'A');
 
-    EXPECT_EQ(nibbles[nibbles.size()-2], '4');
-    EXPECT_EQ(nibbles[nibbles.size()-1], '1');
+    EXPECT_EQ(nibbles[nibbles.size()-2], 'A');
+    EXPECT_EQ(nibbles[nibbles.size()-1], 'A');
 
     std::string str = Utils::RLP::Decode(nibbles);
     ASSERT_EQ(str, initial_str);
@@ -132,14 +124,16 @@ TEST(RLP, ShortStringList)
     EXPECT_EQ(nibbles[2], '8');
     EXPECT_EQ(nibbles[3], '3');
 
-    EXPECT_EQ(nibbles[4], '6');
-    EXPECT_EQ(nibbles[5], '3');
+    EXPECT_EQ(nibbles[4], 'c');
+    EXPECT_EQ(nibbles[5], 'a');
+    EXPECT_EQ(nibbles[6], 't');
 
-    EXPECT_EQ(nibbles[10], '8');
-    EXPECT_EQ(nibbles[11], '3');
+    EXPECT_EQ(nibbles[7], '8');
+    EXPECT_EQ(nibbles[8], '3');
 
-    EXPECT_EQ(nibbles[12], '6');
-    EXPECT_EQ(nibbles[13], '4');
+    EXPECT_EQ(nibbles[9], 'd');
+    EXPECT_EQ(nibbles[10], 'o');
+    EXPECT_EQ(nibbles[11], 'g');
 
     std::vector<std::string> decoded_list = Utils::RLP::DecodeList(nibbles);
     EXPECT_EQ(decoded_list.size(), 2);
@@ -278,11 +272,11 @@ TEST(RLP, NestedShortList)
     EXPECT_EQ(nibbles[4], '8');
     EXPECT_EQ(nibbles[5], '3');
 
-    EXPECT_EQ(nibbles[12], 'c');
-    EXPECT_EQ(nibbles[13], '4');
+    EXPECT_EQ(nibbles[9], 'c');
+    EXPECT_EQ(nibbles[10], '4');
 
-    EXPECT_EQ(nibbles[14], '8');
-    EXPECT_EQ(nibbles[15], '3');
+    EXPECT_EQ(nibbles[11], '8');
+    EXPECT_EQ(nibbles[12], '3');
 
     std::any any_res = Utils::RLP::DecodeAny(nibbles);
 
@@ -331,17 +325,17 @@ TEST(RLP, NestedLongList)
     EXPECT_EQ(nibbles[10], '3');
     EXPECT_EQ(nibbles[11], '8');
 
-    EXPECT_EQ(nibbles[124], 'f');
-    EXPECT_EQ(nibbles[125], '8');
+    EXPECT_EQ(nibbles[68], 'f');
+    EXPECT_EQ(nibbles[69], '8');
 
-    EXPECT_EQ(nibbles[126], '3');
-    EXPECT_EQ(nibbles[127], 'a');
+    EXPECT_EQ(nibbles[70], '3');
+    EXPECT_EQ(nibbles[71], 'a');
 
-    EXPECT_EQ(nibbles[128], 'b');
-    EXPECT_EQ(nibbles[129], '8');
+    EXPECT_EQ(nibbles[72], 'b');
+    EXPECT_EQ(nibbles[73], '8');
 
-    EXPECT_EQ(nibbles[130], '3');
-    EXPECT_EQ(nibbles[131], '8');
+    EXPECT_EQ(nibbles[74], '3');
+    EXPECT_EQ(nibbles[75], '8');
 
     std::any any_res = Utils::RLP::DecodeAny(nibbles);
 
