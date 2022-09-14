@@ -41,34 +41,16 @@ int main(int argc, char *argv[])
 
     Utils::MPT tree;
     tree.update("32fa7b", "10");
-    tree.update("32fa7c", "20"); // keccak of key - 4f6c1c50fde5f5d4f20c2979974a8f465b24e65062f02ef80f722200f35105e2
-    tree.update("32fa7d", "20");
-    tree.update("32fa7e", "20");
-    tree.update("32fa7f", "20");
-    tree.update("32fa7g", "20");
+    tree.update("32fa7c", "20");
+    //tree.update("32fa7c", "20"); // keccak of key - 4f6c1c50fde5f5d4f20c2979974a8f465b24e65062f02ef80f722200f35105e2
+    // tree.update("32fa7d", "20");
+    // tree.update("32fa7e", "20");
+    // tree.update("32fa7f", "20");
+    // tree.update("32fa7g", "20");
     tree.print_contents();
 
-    // tree.update("abbc", "2");
-    // tree.print_contents();
-    // tree.update("abbd", "2");
-    // tree.print_contents();
-    // tree.update("abbcc", "2");
-    // tree.print_contents();
 
-    //tree.update("cac", 2);
-    //tree.print_contents();
-    // tree.update("cb", 2);
-    // tree.print_contents();
-    // tree.update("caac", 2);
-    // tree.print_contents();
-    // tree.update("a71135", 45);
-    // tree.update("a77d337", 1);
-    // tree.update("a7f9365", 1);
-    // tree.update("a77d397", 1);
-
-
-    //int a = 42;
-
+    //// f851808080a02fd2c9e2e74e9d07a920dd1ebf94f1bd7a5aa1764464769c83ce1cbb38137d65a0b7f631fbd6cfb1aeb19411e75fc33769934c7ea2242a47b54ed6895e9627a0fc808080808080808080808080
 //    ClientApp client(multiaddress);
 //    client.run();
 }

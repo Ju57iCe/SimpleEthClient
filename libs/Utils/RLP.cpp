@@ -81,7 +81,7 @@ namespace Utils::RLP
 std::string generate_string_prefix(const std::string& str)
 {
     std::string prefix_res;
-    uint64_t bytes_length = str.size();
+    uint64_t bytes_length = str.size() / 2;
 
     /// Empty string encoding
     if (bytes_length == 0)

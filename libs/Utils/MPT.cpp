@@ -1,6 +1,8 @@
 #include "MPT.h"
 
 #include "RLP.h"
+#include "RLPConstants.h"
+
 #include "Hex.h"
 
 #include "libsolutil/Keccak256.h"
@@ -136,11 +138,17 @@ std::string MPT::calculate_node_hash(NodeType type, std::variant<const Node*, co
 
         add_prefix(key_hash, type);
 
-        std::string value_as_hex = Utils::Hex::ASCIIStringToHexString(leaf->value);
+        std::string key_hash_rlp =  Utils::RLP::Encode(key_hash);
 
-        std::string list_rlp = Utils::RLP::Encode({key_hash, value_as_hex});
+        std::string value_as_hex = Utils::Hex::ascii_string_to_hex_string(leaf->value);
+        std::string value_rlp = Utils::RLP::Encode(value_as_hex);
 
-        node_hash = hash_data(std::move(Utils::Hex::string_to_hex_vector(list_rlp)));
+        uint32_t final_size = (key_hash_rlp.size() + value_rlp.size()) / 2;
+        std::string final_rlp = Utils::Hex::int_to_hex_str(Utils::RLP::SHORT_LIST_PREFIX + final_size);
+        final_rlp.insert(final_rlp.end(), key_hash_rlp.begin(), key_hash_rlp.end());
+        final_rlp.insert(final_rlp.end(), value_rlp.begin(), value_rlp.end());
+
+        node_hash = hash_data(std::move(Utils::Hex::string_to_hex_vector(final_rlp)));
     }
     else if (type == NodeType::BRANCH_NODE)
     {
@@ -155,20 +163,13 @@ std::string MPT::calculate_node_hash(NodeType type, std::variant<const Node*, co
                 keys_to_rlp.append(Utils::RLP::Encode(branch->hash));
         }
 
-        std::string value_as_hex = branch_node->value.empty() ? "80" : Utils::Hex::ASCIIStringToHexString(branch_node->value);
+        std::string value_as_hex = branch_node->value.empty() ? "80" : Utils::Hex::ascii_string_to_hex_string(branch_node->value);
         keys_to_rlp.insert(keys_to_rlp.end(), value_as_hex.begin(), value_as_hex.end());
 
-        std::vector<uint8_t> prefix = Utils::RLP::generate_long_list_prefix(keys_to_rlp.size()/2);
-
-        std::string list_prefix;
-        for (uint32_t i = 0; i < prefix.size(); ++i)
-        {
-            std::string hex_str = Utils::Hex::int_to_hex_str(prefix[i]);
-            list_prefix.insert(list_prefix.end(), hex_str.begin(), hex_str.end());
-        }
+        std::string prefix = Utils::RLP::generate_long_list_prefix(keys_to_rlp.size()/2);
 
         std::string list_rlp;
-        list_rlp.insert(list_rlp.begin(), list_prefix.begin(), list_prefix.end());
+        list_rlp.insert(list_rlp.begin(), prefix.begin(), prefix.end());
         list_rlp.insert(list_rlp.end(), keys_to_rlp.begin(), keys_to_rlp.end());
 
         node_hash = hash_data(std::move(Utils::Hex::string_to_hex_vector(list_rlp)));
