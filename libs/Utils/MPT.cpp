@@ -51,21 +51,12 @@ void MPT::update(const std::string& key, const std::string& value)
             leaf_node->value = value;
 
             leaf_node->nibbles.erase(leaf_node->nibbles.begin());
-            leaf_node->hash = calculate_node_hash(NodeType::LEAF_NODE,
-                                                    leaf_node.get());
             parent_node->branch_node.get()->branches[branch_point] = std::move(leaf_node);
         }
         else
         {
-            leaf_node->value = value;
-            leaf_node->hash = calculate_node_hash(NodeType::LEAF_NODE,
-                                                    leaf_node);
+            leaf_node->value = value;;
         }
-
-        parent_node->hash = calculate_node_hash(NodeType::BRANCH_NODE,
-                                                std::variant<const Node*, const BranchNode*>(parent_node->branch_node.get()));
-
-        recalculate_hashes(*leaf_node);
     }
     else
     {
@@ -73,10 +64,9 @@ void MPT::update(const std::string& key, const std::string& value)
 
         m_root->nibbles = to_nibbles(std::string(key_hash.begin(), key_hash.end()));
         m_root->value = value;
-
-        m_root->hash = calculate_node_hash(NodeType::LEAF_NODE, m_root.get());
-        recalculate_hashes(*m_root.get());
     }
+
+    recalculate_hashes(*m_root.get());
 }
 
 void MPT::add_prefix(std::string& key_hash, NodeType type) const
@@ -242,20 +232,18 @@ void MPT::transform_leaf_node_to_extension_node(MPT::Node& node, uint8_t nibbles
     node.nibbles = std::vector(node.nibbles.begin(), node.nibbles.begin() + nibbles_matched);
     node.branch_node = std::unique_ptr<BranchNode>(new BranchNode);
 
-    node.hash = calculate_node_hash(NodeType::EXTENSION_NODE,
-                                    std::variant<const Node*, const BranchNode*>(&node));
-
     moved_node->nibbles.erase(moved_node->nibbles.begin());
-    moved_node->hash = calculate_node_hash(NodeType::LEAF_NODE,
-                                            std::variant<const Node*, const BranchNode*>(moved_node.get()));
 
     node.branch_node->branches[branch_point] = std::move(moved_node);
 }
 
 void MPT::print_contents() const
 {
-    std::cout<< "=======================" << std::endl;
-    print_contents_recursive(*m_root.get());
+    if (m_root)
+    {
+        std::cout<< "=======================" << std::endl;
+        print_contents_recursive(*m_root.get());
+    }
 }
 
 void MPT::print_contents_recursive(const MPT::Node& node, uint32_t branch_level) const
@@ -323,9 +311,22 @@ void MPT::print_contents_recursive(const MPT::Node& node, uint32_t branch_level)
     }
 }
 
-void MPT::recalculate_hashes(MPT::Node& changed_node)
+void MPT::recalculate_hashes(MPT::Node& node)
 {
+    if (node.branch_node.get() != nullptr)
+    {
+        for (auto& branched_node : node.branch_node->branches)
+        {
+            if (branched_node.get() != nullptr)
+                recalculate_hashes(*branched_node.get());
+        }
+        node.hash = calculate_node_hash(NodeType::BRANCH_NODE,std::variant<const Node*, const BranchNode*>(node.branch_node.get()));
 
+    }
+    else
+    {
+        node.hash = calculate_node_hash(NodeType::LEAF_NODE,std::variant<const Node*, const BranchNode*>(&node));
+    }
 }
 
 void MPT::delete_node(std::string key)
